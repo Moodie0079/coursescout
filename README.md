@@ -1,36 +1,161 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CourseScout 📚
 
-## Getting Started
+A comprehensive course insight platform that analyzes Reddit discussions to provide students with valuable information about courses at Carleton University.
 
-First, run the development server:
+## 🎯 Features
 
+- **Course Insights**: AI-powered analysis of Reddit discussions
+- **Professor Ratings**: Integration with RateMyProfessors
+- **Course Catalog**: Official course information from Carleton University
+- **Comprehensive Search**: Full historical analysis of r/CarletonU
+- **Real-time Analysis**: Fast, database-driven insights
+
+## 🏗️ Architecture
+
+- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
+- **Backend**: Node.js API routes with Prisma ORM
+- **Database**: SQLite (development) / PostgreSQL (production)
+- **AI**: OpenAI GPT-4o-mini for content analysis
+- **Data Sources**: Reddit API, RateMyProfessors, Carleton Course Catalog
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- PostgreSQL (for production)
+
+### Development Setup
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/coursescout.git
+cd coursescout
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys
+
+# Set up database
+npx prisma generate
+npx prisma db push
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
+```bash
+DATABASE_URL="your_database_url"
+OPENAI_API_KEY="your_openai_api_key"
+NODE_ENV="development"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📊 Data Collection
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Crawl Individual Course
+```bash
+npx tsx scripts/crawl-reddit.ts "COMP 1005"
+```
 
-## Learn More
+### Bulk Crawl (Production)
+```bash
+# Crawl all courses
+npx tsx scripts/bulk-crawl-all-courses.ts
 
-To learn more about Next.js, take a look at the following resources:
+# Test with limited courses
+npx tsx scripts/bulk-crawl-all-courses.ts --test --count=10
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Database Management
+```bash
+# Clear all data
+npx tsx scripts/clear-database.ts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Browse stored courses
+npx tsx scripts/browse-courses.ts
+```
 
-## Deploy on Vercel
+## 🌐 Production Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Server Requirements
+- Linux server with root access
+- Node.js 18+
+- PostgreSQL 12+
+- Nginx
+- PM2
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Deployment Steps
+1. **Server Setup**: Install dependencies
+2. **Database**: Configure PostgreSQL
+3. **Code Deployment**: Clone and build
+4. **Process Management**: Use PM2
+5. **Reverse Proxy**: Configure Nginx
+6. **SSL**: Set up certificates
+7. **Domain**: Configure DNS
+8. **Automation**: Schedule crawling
+
+See deployment documentation for detailed steps.
+
+## 🔧 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
+
+## 📁 Project Structure
+
+```
+coursescout/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── components/        # React components
+│   └── types.ts          # TypeScript definitions
+├── lib/                   # Utility libraries
+│   ├── ai-processor.ts   # AI analysis
+│   ├── db-reddit-api.ts  # Database operations
+│   └── carleton-catalog.ts
+├── prisma/               # Database schema
+├── scripts/              # Data collection scripts
+└── real-carleton-courses.json # Course data
+```
+
+## 🛡️ Security Features
+
+- Input validation and sanitization
+- SQL injection protection
+- Rate limiting for API calls
+- Environment variable protection
+
+## 📈 Performance
+
+- O(1) course lookup with caching
+- Persistent crawl tracking
+- Intelligent duplicate detection
+- Optimized database queries
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check existing documentation
+- Review the troubleshooting guide
+
+---
+
+Built with ❤️ for Carleton University students
