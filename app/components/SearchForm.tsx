@@ -23,12 +23,6 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Removed recent searches loading
-
-
-
-
-
   const isValidCourseCode = (code: string): boolean => {
     // Carleton course codes: 4 letters followed by 4 numbers (e.g., COMP 1005)
     const courseCodePattern = /^[A-Z]{4}\s[0-9]{4}$/;

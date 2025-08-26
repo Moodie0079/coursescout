@@ -299,6 +299,8 @@ export class SimpleComprehensiveCrawler {
     do {
       pageCount++;
       const encodedQuery = encodeURIComponent(query);
+
+      // Hardcoded to r/CarletonU for now
       const url = `https://www.reddit.com/r/CarletonU/search.json?q=${encodedQuery}&restrict_sr=1&sort=new&limit=100&t=all${after ? `&after=${after}` : ''}`;
       
       try {
@@ -342,14 +344,14 @@ export class SimpleComprehensiveCrawler {
       throw new Error(`Invalid course code: ${courseCode}`);
     }
     
-    console.log(`🚀 Starting simple comprehensive crawler for ${sanitizedCourseCode}...`);
-    console.log(`⚙️ Strategy: Search entire r/CarletonU history for any mention of course code`);
+    console.log(`Starting simple comprehensive crawler for ${sanitizedCourseCode}...`);
+    console.log(`Strategy: Search entire r/CarletonU history for any mention of course code`);
     console.log(''); // Add spacing
     
     const searchQueries = this.buildSearchQueries(sanitizedCourseCode);
     
-    console.log(`🔍 Searching entire Reddit history for ${sanitizedCourseCode} mentions...`);
-    console.log(`📡 Searching r/CarletonU with ${searchQueries.length} course code variations...`);
+    console.log(`Searching entire Reddit history for ${sanitizedCourseCode} mentions...`);
+    console.log(`Searching r/CarletonU with ${searchQueries.length} course code variations...`);
     console.log(''); // Add spacing
     
     let totalPosts = 0;
@@ -430,7 +432,7 @@ export class SimpleComprehensiveCrawler {
                     });
                     
                     if (existingComment) {
-                      console.log(`⏭️  Duplicate comment detected: ${comment.id}`);
+                      console.log(`Duplicate comment detected: ${comment.id}`);
                       continue;
                     }
                     

@@ -27,10 +27,10 @@ async function testRedditConnection() {
     }
     
     console.log('✅ Found Reddit API credentials');
-    console.log(`   Client ID: ${clientId.substring(0, 6)}...`);
+    console.log(`Client ID: ${clientId.substring(0, 6)}...`);
     
     // Test Reddit OAuth
-    console.log('🔐 Testing Reddit OAuth...');
+    console.log('Testing Reddit OAuth...');
     
     const authResponse = await fetch('https://www.reddit.com/api/v1/access_token', {
       method: 'POST',
@@ -71,7 +71,7 @@ async function testRedditConnection() {
     console.log(`📊 Found ${posts.length} posts about "COMP" in r/CarletonU`);
     
     // Show sample results
-    console.log('\n📋 Sample posts:');
+    console.log('\n Sample posts:');
     posts.slice(0, 3).forEach((post: any, i: number) => {
       console.log(`   ${i + 1}. "${post.data.title}"`);
       console.log(`      Score: ${post.data.score} | Comments: ${post.data.num_comments}`);
@@ -96,7 +96,7 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((error) => {
-      console.error('💥 Test failed:', error);
+      console.error('Test failed:', error);
       process.exit(1);
     });
 }

@@ -3,7 +3,8 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-interface Course {
+interface Course 
+{
   code: string;
   title: string;
   description?: string;
@@ -19,18 +20,19 @@ async function scrapeCarletonCourses(): Promise<Course[]> {
   const courses: Course[] = [];
   
   try {
-    console.log(`📡 Fetching department list from ${baseUrl}`);
+    console.log(`Fetching department list from ${baseUrl}`);
     
     // First, get the main page to extract department codes
     const response = await fetch(baseUrl);
-    if (!response.ok) {
+    if (!response.ok) 
+    {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
     
     const html = await response.text();
     console.log(`📄 Received ${html.length} characters of HTML`);
     
-    // Let's save the HTML to examine the structure
+    // Save the HTML to examine the structure
     fs.writeFileSync('carleton-courses-page.html', html);
     console.log('💾 Saved HTML to carleton-courses-page.html for analysis');
     
@@ -51,28 +53,55 @@ async function scrapeCarletonCourses(): Promise<Course[]> {
       }
     }
     
-    console.log(`🏛️  Found ${departments.length} departments:`, departments.sort().join(', '));
+    console.log(`Found ${departments.length} departments:`, departments.sort().join(', '));
     
     // Now fetch courses from each department
     for (const dept of departments.sort()) {
       try {
         console.log(`🔍 Fetching courses for ${dept}...`);
         
-        // Try standard URL format first
+        // Try standard URL format first with retry logic
         let deptUrl = `${baseUrl}${dept}/`;
-        let deptResponse = await fetch(deptUrl);
+        let deptResponse;
+        
+        // Retry up to 3 times for network issues
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            deptResponse = await fetch(deptUrl, { 
+              signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            break; // Success, exit retry loop
+          } catch (error) {
+            console.log(`   ⚠️  Attempt ${attempt} failed for ${dept}: ${error instanceof Error ? error.message : error}`);
+            if (attempt === 3) throw error; // Final attempt failed
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+          }
+        }
         
         // If that fails, try the special format
-        if (!deptResponse.ok) {
+        if (!deptResponse || !deptResponse.ok) {
           deptUrl = `${baseUrl}${dept.toLowerCase()}/`;
-          deptResponse = await fetch(deptUrl);
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            
+            deptResponse = await fetch(deptUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+          } catch (error) {
+            throw new Error(`Both URL formats failed: ${error instanceof Error ? error.message : error}`);
+          }
         }
         
         if (deptResponse.ok) {
           const deptHtml = await deptResponse.text();
           
-          // Extract courses in format "DEPT ####"
-          const courseRegex = new RegExp(`(${dept})\\s+(\\d{4})`, 'g');
+          // Extract courses in format "DEPT ####" - handle both regular spaces and HTML entities
+          const courseRegex = new RegExp(`(${dept})(?:\\s|&#160;|&nbsp;)+(\\d{4})`, 'gi');
           const courseMatches = deptHtml.matchAll(courseRegex);
           
           for (const courseMatch of courseMatches) {
@@ -80,9 +109,9 @@ async function scrapeCarletonCourses(): Promise<Course[]> {
             const number = courseMatch[2];
             const code = `${department} ${number}`;
             
-            // Try to extract the course title from nearby text
+            // Try to extract the course title from nearby text - handle HTML entities
             const titleRegex = new RegExp(
-              `${department}\\s+${number}\\s*[\\[\\(]?[^\\n]*?[\\]\\)]?\\s*([^\\n<]+?)(?:<|\\n|$)`, 
+              `${department}(?:\\s|&#160;|&nbsp;)+${number}[^\\n]*?\\]\\s*([^\\n<]+?)(?:<|\\n|$)`, 
               'i'
             );
             const titleMatch = deptHtml.match(titleRegex);

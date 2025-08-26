@@ -1,24 +1,24 @@
-# CourseScout 📚
+# CourseScout
 
-A comprehensive course insight platform that analyzes Reddit discussions to provide students with valuable information about courses at Carleton University.
+A  course insight platform that analyzes Reddit discussions to give students information about courses at their school.
 
-## 🎯 Features
+## Features
 
 - **Course Insights**: AI-powered analysis of Reddit discussions
 - **Professor Ratings**: Integration with RateMyProfessors
 - **Course Catalog**: Official course information from Carleton University
-- **Comprehensive Search**: Full historical analysis of r/CarletonU
-- **Real-time Analysis**: Fast, database-driven insights
+- **Comprehensive Search**: Full historical analysis of the schools reddit
+- **Real-time Analysis**: Fast insights
 
-## 🏗️ Architecture
+## Architecture
 
 - **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
 - **Backend**: Node.js API routes with Prisma ORM
 - **Database**: SQLite (development) / PostgreSQL (production)
-- **AI**: OpenAI GPT-4o-mini for content analysis
+- **AI**: OpenAI GPT-4o-mini for analysis
 - **Data Sources**: Reddit API, RateMyProfessors, Carleton Course Catalog
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+
@@ -27,16 +27,16 @@ A comprehensive course insight platform that analyzes Reddit discussions to prov
 
 ### Development Setup
 ```bash
+
 # Clone the repository
-git clone https://github.com/yourusername/coursescout.git
+git clone https://github.com/Moodie0079/coursescout.git
 cd coursescout
 
 # Install dependencies
 npm install
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys
+cp .env.example .env # Edit .env with your API keys
 
 # Set up database
 npx prisma generate
@@ -53,7 +53,7 @@ OPENAI_API_KEY="your_openai_api_key"
 NODE_ENV="development"
 ```
 
-## 📊 Data Collection
+## Data Collection
 
 ### Crawl Individual Course
 ```bash
@@ -78,7 +78,7 @@ npx tsx scripts/clear-database.ts
 npx tsx scripts/browse-courses.ts
 ```
 
-## 🌐 Production Deployment
+## Production Deployment
 
 ### Server Requirements
 - Linux server with root access
@@ -99,14 +99,14 @@ npx tsx scripts/browse-courses.ts
 
 See deployment documentation for detailed steps.
 
-## 🔧 Scripts
+## Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 coursescout/
@@ -123,21 +123,20 @@ coursescout/
 └── real-carleton-courses.json # Course data
 ```
 
-## 🛡️ Security Features
+## Security Features
 
 - Input validation and sanitization
 - SQL injection protection
 - Rate limiting for API calls
 - Environment variable protection
 
-## 📈 Performance
+## Performance
 
 - O(1) course lookup with caching
-- Persistent crawl tracking
-- Intelligent duplicate detection
+- Crawl tracking
 - Optimized database queries
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -148,14 +147,3 @@ coursescout/
 ## 📄 License
 
 This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For issues and questions:
-- Create an issue on GitHub
-- Check existing documentation
-- Review the troubleshooting guide
-
----
-
-Built with ❤️ for Carleton University students

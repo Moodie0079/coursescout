@@ -1,257 +1,124 @@
-# 🚀 Database-Driven CourseScout System
+# Database System Overview
 
-## **🎯 What This Solves**
+## Purpose
 
-**BEFORE**: Rate limiting hell, 30+ second waits, circuit breakers, failed requests
-**AFTER**: Lightning-fast 3-second responses, unlimited concurrent users, 99.9% uptime
+This document explains the database-driven architecture that powers CourseScout's fast course insights.
 
-## **🏗️ Architecture Overview**
+## Core Concept
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   User Request  │───▶│  Database Lookup │───▶│  GPT Analysis   │
-│   (Instant)     │    │   (Milliseconds) │    │  (2-3 seconds)  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                ▲
-                                │
-                       ┌────────────────────┐
-                       │  Background Crawl  │
-                       │   (Runs Offline)   │
-                       └────────────────────┘
-```
+Instead of making live API calls to Reddit during user requests, CourseScout pre-crawls and stores discussion data in a local database. This enables:
 
-## **📊 Performance Comparison**
+- Instant response times (3-5 seconds vs 30+ seconds)
+- No rate limiting issues for users
+- Comprehensive historical data analysis
+- Reliable service availability
 
-| Metric | Old System | New System |
-|--------|------------|------------|
-| Response Time | 30-120 seconds | 3-5 seconds |
-| Success Rate | 60-80% | 99.9% |
-| Concurrent Users | 1-2 | Unlimited |
-| Rate Limiting | Constant | Never |
-| Data Freshness | Real-time | Daily updates |
+## Database Schema
 
-## **🛠️ Implementation Components**
+### Core Tables
 
-### **1. Database Schema** ✅
-- `Post` table: Reddit posts with course codes
-- `Comment` table: Reddit comments with scores
-- `Sentence` table: Vector embeddings for semantic search
-- `CourseCache` table: Optional caching layer
+**Course** - Summary statistics for each course
+- `courseCode` - Primary key (e.g., "COMP 1005")
+- `totalPosts` - Number of Reddit posts mentioning this course
+- `totalComments` - Number of comments across all posts
+- `firstPostDate` - Earliest discussion found
+- `latestPostDate` - Most recent discussion
+- `lastUpdated` - When data was last refreshed
 
-### **2. Data Collection Pipeline** ✅
-- `scripts/systematic-crawler.ts`: Comprehensive course data collection
-- `scripts/generate-course-list.ts`: Smart course code generation
-- `scripts/crawl_reddit.ts`: Core Reddit crawler with rate limiting
+**Post** - Individual Reddit posts
+- `id` - Reddit post ID
+- `title` - Post title
+- `body` - Post content
+- `score` - Reddit score
+- `permalink` - Link to original post
+- `courseCode` - Primary course this post discusses
 
-### **3. Database API Layer** ✅
-- `lib/db-reddit-api.ts`: Fast database queries instead of live Reddit calls
-- Compatible with existing AI processor
-- Supports vector similarity search
+**Comment** - Reddit comments on posts
+- `id` - Reddit comment ID
+- `postId` - Links to Post table
+- `body` - Comment content
+- `score` - Comment score
+- `author` - Username
+- `permalink` - Direct link to comment
 
-### **4. Maintenance System** ✅
-- `scripts/maintenance.ts`: Automated data updates and cleanup
-- Daily, weekly, monthly maintenance schedules
-- Duplicate removal, analytics, optimization
+**CourseMention** - Links posts to all courses mentioned
+- `courseCode` - Course that was mentioned
+- `postId` - Post containing the mention
+- `mentionType` - "primary" (main topic) or "secondary" (mentioned in passing)
 
-## **🚀 Quick Start Guide**
+**CrawledCourse** - Tracks crawling progress
+- `courseCode` - Course that has been fully crawled
+- `crawledAt` - When it was crawled
+- `lastUpdated` - Last update time
 
-### **Step 1: Initial Data Collection**
+## Data Collection Process
+
+### 1. Course Discovery
 ```bash
-# Generate course list (takes ~30 seconds)
-npm run generate:courses
-
-# Start with priority courses (takes ~2-4 hours)
-npm run crawl:priority
-
-# Optional: Full crawl (takes ~12-24 hours)
-npm run crawl:all
+npx tsx scripts/get-real-carleton-courses.ts
 ```
+Scrapes Carleton's official course catalog to get all valid course codes.
 
-### **Step 2: Switch to Database Mode**
-Your API automatically uses the database once data exists. No configuration needed!
-
-### **Step 3: Set Up Maintenance**
+### 2. Individual Course Crawling
 ```bash
-# Daily updates (10-30 minutes)
-npm run maintain:daily
-
-# Weekly comprehensive update (2-4 hours)
-npm run maintain:weekly  
-
-# Monthly full maintenance (4-8 hours)
-npm run maintain:monthly
+npx tsx scripts/crawl-reddit.ts "COMP 1005"
 ```
+Searches Reddit for all mentions of a specific course, stores posts and comments.
 
-## **📈 Usage Commands**
-
-### **Data Collection**
+### 3. Bulk Crawling
 ```bash
-npm run crawl:priority        # 50 high-priority courses (~2-4 hours)
-npm run crawl:all            # All possible courses (~12-24 hours)
-npm run crawl:update         # Update existing data only
+npx tsx scripts/bulk-crawl-all-courses.ts
 ```
+Systematically crawls all Carleton courses with progress tracking and duplicate detection.
 
-### **Maintenance**
+### 4. Database Inspection
 ```bash
-npm run maintain:daily       # Update popular courses
-npm run maintain:weekly      # Update all existing courses
-npm run maintain:monthly     # Comprehensive maintenance
-npm run maintain:cleanup     # Remove duplicates & old data
-npm run maintain:analytics   # Generate database statistics
+npx tsx scripts/browse-courses.ts
 ```
+View summary statistics of crawled data.
 
-### **Course Management**
+### 5. Database Reset
 ```bash
-npm run generate:courses     # Generate course code lists
+npx tsx scripts/clear-database.ts
 ```
+Clear all data to start fresh.
 
-## **🔄 Recommended Schedule**
+## How It Works
 
-### **Production Schedule**
-```bash
-# Daily at 2 AM (via cron)
-0 2 * * * cd /path/to/app && npm run maintain:daily
+1. **Pre-crawling**: Scripts collect Reddit discussions and store them locally
+2. **User Request**: Frontend sends course code to API
+3. **Database Lookup**: Fast query retrieves relevant posts and comments
+4. **AI Analysis**: OpenAI analyzes the stored content
+5. **Response**: Insights returned to user in seconds
 
-# Weekly on Sundays at 3 AM
-0 3 * * 0 cd /path/to/app && npm run maintain:weekly
+## Benefits
 
-# Monthly on 1st at 4 AM
-0 4 1 * * cd /path/to/app && npm run maintain:monthly
-```
+- **Speed**: Database queries are milliseconds vs seconds for API calls
+- **Reliability**: No dependency on Reddit API availability during user requests
+- **Comprehensiveness**: Can analyze years of historical data
+- **Scalability**: Supports unlimited concurrent users
+- **Cost Control**: Predictable crawling costs vs unpredictable live API usage
 
-### **Development Schedule**
-```bash
-# Run manually as needed
-npm run maintain:daily     # After adding new courses
-npm run maintain:cleanup   # When database gets messy
-npm run maintain:analytics # To check data quality
-```
+## Development vs Production
 
-## **📊 Monitoring & Analytics**
+**Development**
+- Uses SQLite (`dev.db` file)
+- Single-user database
+- Perfect for testing and development
 
-### **Database Stats**
-```bash
-npm run maintain:analytics
-```
-Shows:
-- Total posts, comments, sentences
-- Top courses by discussion volume
-- Data freshness metrics
-- Course coverage statistics
+**Production**
+- Uses PostgreSQL
+- Multi-user capable
+- Supports high traffic loads
+- Requires database server setup
 
-### **Health Checks**
-The system automatically:
-- Removes duplicate posts/comments
-- Archives old data (3+ years)
-- Optimizes database performance
-- Discovers new course mentions
+## Crawling Strategy
 
-## **⚡ Performance Optimizations**
+The system tracks which courses have been fully crawled to avoid duplicate work:
 
-### **Vector Search**
-- Semantic similarity for course-specific content
-- Fast retrieval of relevant discussions
-- Better context than keyword matching
+- **First run**: Crawls everything for a course
+- **Subsequent runs**: Skips already-crawled courses
+- **Manual override**: Can force re-crawl specific courses
+- **Progress tracking**: Maintains state across multiple crawl sessions
 
-### **Intelligent Caching**
-- Course results cached in `CourseCache` table
-- Automatic cache invalidation
-- Faster repeat searches
-
-### **Smart Data Filtering**
-- Only relevant discussions stored
-- Course-specific sentence extraction
-- Professor attribution accuracy
-
-## **🛡️ Production Deployment**
-
-### **Rate Limiting Strategy**
-1. **Primary**: Database serves 95% of requests instantly
-2. **Background**: Crawler respects Reddit limits completely
-3. **Maintenance**: Scheduled during low-traffic hours
-
-### **Scalability**
-- Database handles 1000+ concurrent users
-- No external API dependencies for user requests
-- Horizontal scaling possible with read replicas
-
-### **Data Freshness**
-- Popular courses updated daily
-- All courses updated weekly
-- New course discovery monthly
-- Manual updates available anytime
-
-## **🎉 Benefits Achieved**
-
-### **✅ User Experience**
-- **3-second responses** instead of 30+ seconds
-- **99.9% success rate** instead of 60-80%
-- **No waiting screens** or circuit breakers
-- **Unlimited concurrent users**
-
-### **✅ Cost Efficiency**
-- **90% fewer API calls** to Reddit
-- **Predictable costs** (no rate limit overages)
-- **Better resource utilization**
-
-### **✅ Data Quality**
-- **More comprehensive data** (not limited by real-time constraints)
-- **Better course-specific filtering**
-- **Historical data preservation**
-- **Semantic search capabilities**
-
-### **✅ Operational Reliability**
-- **No more rate limiting issues**
-- **Predictable performance**
-- **Easy monitoring and maintenance**
-- **Graceful degradation**
-
-## **🔧 Troubleshooting**
-
-### **No Data for Course**
-```bash
-# Check if course exists in database
-npm run maintain:analytics
-
-# Add specific course
-npm run crawl:update
-
-# Force refresh
-npm run maintain:cleanup && npm run crawl:priority
-```
-
-### **Slow Performance**
-```bash
-# Optimize database
-npm run maintain:cleanup
-
-# Check analytics
-npm run maintain:analytics
-
-# Full optimization
-npm run maintain:monthly
-```
-
-### **Stale Data**
-```bash
-# Quick update
-npm run maintain:daily
-
-# Full refresh
-npm run maintain:weekly
-```
-
-## **🎯 Next Steps**
-
-1. **Run Initial Crawl**: `npm run crawl:priority`
-2. **Test Database Mode**: Search for any course
-3. **Set Up Cron Jobs**: Schedule maintenance
-4. **Monitor Performance**: Use analytics commands
-5. **Scale as Needed**: Add read replicas for high traffic
-
----
-
-**🚀 Your rate limiting problems are now SOLVED!** 
-
-Users get instant results, you get predictable costs, and the system scales to handle thousands of concurrent users without breaking a sweat.
-
+This makes it efficient to run bulk crawls incrementally without re-doing completed work.

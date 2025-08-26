@@ -91,6 +91,7 @@ export class AIProcessor {
       `[${index + 1}] ${item.type.toUpperCase()}: ${item.text.slice(0, 800)}`
     ).join('\n\n');
 
+    // Carleton University only for now
     const prompt = `You are analyzing ${content.length} Reddit discussions about ${courseCode} from Carleton University. Extract comprehensive insights for prospective students.
 
 CRITICAL FILTERING REQUIREMENTS:

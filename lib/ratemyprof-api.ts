@@ -1,8 +1,5 @@
 // Service to fetch professor information from RateMyProfessors using the working library
-import NodeCache from 'node-cache';
 import { RateMyProfessor } from 'rate-my-professor-api-ts';
-
-// const cache = new NodeCache({ stdTTL: 3600 }); // 1-hour cache - DISABLED per user request
 
 export interface RateMyProfData {
   id: string;
@@ -26,10 +23,6 @@ export interface RateMyProfData {
 export class RateMyProfAPI {
   private rmp: RateMyProfessor;
   private debugMode: boolean = false; // Set to true for detailed matching logs
-  // Cache disabled per user request
-  // private professorListCache: any[] | null = null;
-  // private professorListCacheTime: number = 0;
-  // private readonly CACHE_DURATION = 3600000; // 1 hour in ms
   
   // Efficient indexing for professor lookups
   private professorIndex: Map<string, any> = new Map();
@@ -296,10 +289,7 @@ export class RateMyProfAPI {
   private async getProfessorList(): Promise<any[]> {
     const now = Date.now();
     
-    // Cache disabled per user request - always fetch fresh data
-    // if (this.professorListCache && (now - this.professorListCacheTime) < this.CACHE_DURATION) {
-    //   return this.professorListCache;
-    // }
+
     
     try {
       console.log('Fetching professor list from RateMyProfessors...');
@@ -308,24 +298,18 @@ export class RateMyProfAPI {
       // Build search index for efficient lookups
       this.buildProfessorIndex(professors);
       
-      // Cache disabled per user request
-      // this.professorListCache = professors;
-      // this.professorListCacheTime = now;
-      console.log(`Fetched ${professors.length} professors from Carleton University (no caching)`);
+      console.log(`Fetched ${professors.length} professors from Carleton University`);
       return professors;
     } catch (error) {
       console.error('Error fetching professor list:', error);
-      // Cache disabled - return empty array on error
+
       this.indexBuilt = false;
       return [];
     }
   }
 
   async searchProfessor(name: string, schoolName = 'Carleton University'): Promise<RateMyProfData | null> {
-    // Cache disabled per user request - always fetch fresh data
-    // const cacheKey = `rmp:${name}`;
-    // const cached = cache.get<RateMyProfData>(cacheKey);
-    // if (cached) return cached;
+
 
     try {
       // Ensure professor list is loaded and indexed
@@ -404,8 +388,7 @@ export class RateMyProfAPI {
         recentComments: []
       };
       
-      // Cache disabled per user request
-      // cache.set(cacheKey, result);
+
       return result;
     } catch (e) {
       console.warn('RMP fetch error:', e);

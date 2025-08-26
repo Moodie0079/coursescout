@@ -45,7 +45,7 @@ class BulkCourseCrawler {
 
   /**
    * LOAD PROGRESS: Resumes from where we left off if the script was interrupted
-   * - Loads from JSON file if it exists
+   * Loads from JSON file if it exists
    * - Creates new progress object if starting fresh
    */
   private loadProgress(): BulkCrawlProgress {
