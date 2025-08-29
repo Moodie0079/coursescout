@@ -476,13 +476,7 @@ export class SimpleComprehensiveCrawler {
       // Update Course summary table with ALL mentions (primary + secondary)
       await this.updateCourseSummary(sanitizedCourseCode.toUpperCase());
       
-      // Mark this course as fully crawled in persistent tracking
-      await prisma.crawledCourse.upsert({
-        where: { courseCode: sanitizedCourseCode.toUpperCase() },
-        update: { lastUpdated: new Date() },
-        create: { courseCode: sanitizedCourseCode.toUpperCase() }
-      });
-      console.log(`🎯 Course ${sanitizedCourseCode} marked as fully crawled`);
+      console.log(`🎯 Course ${sanitizedCourseCode} crawling completed`);
       console.log(''); // Add spacing at end
       
     } catch (error) {

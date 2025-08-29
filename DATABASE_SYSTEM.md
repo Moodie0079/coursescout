@@ -13,7 +13,7 @@ Instead of making live API calls to Reddit during user requests, CourseScout pre
 - Comprehensive historical data analysis
 - Reliable service availability
 
-## Database Schema
+## Database Sche
 
 ### Core Tables
 

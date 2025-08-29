@@ -20,12 +20,7 @@ model Course {
   mentions          CourseMention[]
 }
 
-// Track which courses have been fully crawled (persistent hashset)
-model CrawledCourse {
-  courseCode   String   @id
-  crawledAt    DateTime @default(now())
-  lastUpdated  DateTime @updatedAt
-}
+
 
 model Post {
   id         String    @id

@@ -32,9 +32,7 @@ class BulkCourseCrawler {
   private batchSize: number = 50; // Save progress every 50 courses
   private stats: CrawlStats = { postsFound: 0, commentsFound: 0, requestsMade: 0, rateLimitHits: 0 };
   
-  // Performance optimization: cache already-crawled courses in memory
-  private crawledCoursesCache: Set<string> = new Set();
-  private cacheBuilt: boolean = false;
+
 
   constructor(testMode = false, testCount = 10) {
     this.testMode = testMode;
@@ -115,50 +113,7 @@ class BulkCourseCrawler {
     }
   }
 
-  /**
-   * BUILD CRAWLED COURSES CACHE: One-time database query to load all fully crawled courses
-   * - Queries CrawledCourse table (persistent tracking)
-   * - Stores in memory for O(1) lookups
-   * - Massive performance improvement over per-course database queries
-   */
-  private async buildCrawledCoursesCache(): Promise<void> {
-    if (this.cacheBuilt) return;
-    
-    try {
-      console.log(`🧠 Building cache of fully crawled courses...`);
-      const startTime = Date.now();
-      
-      const crawledCourses = await prisma.crawledCourse.findMany({
-        select: { courseCode: true }
-      });
-      
-      // Add to cache
-      crawledCourses.forEach(course => {
-        this.crawledCoursesCache.add(course.courseCode);
-      });
-      
-      const buildTime = Date.now() - startTime;
-      this.cacheBuilt = true;
-      
-      console.log(`✅ Cache built: ${this.crawledCoursesCache.size} fully crawled courses (${buildTime}ms)`);
-      console.log(`🚀 Performance: O(1) lookups instead of database queries for each course`);
-      
-    } catch (error) {
-      console.error('❌ Failed to build crawled courses cache:', error);
-      this.cacheBuilt = false; // Allow retry
-    }
-  }
 
-  /**
-   * INVALIDATE CACHE: Clears the in-memory cache and forces rebuild
-   * - Useful if database is modified externally during crawling
-   * - Cache will rebuild automatically on next lookup
-   */
-  public invalidateCache(): void {
-    this.crawledCoursesCache.clear();
-    this.cacheBuilt = false;
-    console.log(`🔄 Cache invalidated - will rebuild on next lookup`);
-  }
 
   /**
    * VALIDATE COURSE CODE: Check if course code has valid format
@@ -177,30 +132,7 @@ class BulkCourseCrawler {
     return coursePattern.test(sanitized) && sanitized === courseCode.trim();
   }
 
-  /**
-   * CHECK IF COURSE ALREADY CRAWLED: Ultra-fast duplicate detection
-   * - Checks progress file first (current session)
-   * - Checks in-memory cache second (O(1) lookup)
-   * - No database queries per course = massive speed improvement
-   */
-  private async isCourseAlreadyCrawled(courseCode: string): Promise<boolean> {
-    // Quick check: already completed in this session
-    if (this.progress.completedCourses.includes(courseCode)) {
-      return true;
-    }
 
-    // Build cache once if needed (one database query for all courses)
-    await this.buildCrawledCoursesCache();
-    
-    // O(1) memory lookup instead of database query
-    const wasAlreadyCrawled = this.crawledCoursesCache.has(courseCode.toUpperCase());
-    
-    if (wasAlreadyCrawled) {
-      console.log(`🔍 ${courseCode} found in cache (previously crawled)`);
-    }
-    
-    return wasAlreadyCrawled;
-  }
 
   /**
    * CRAWL SINGLE COURSE: The main crawling logic
@@ -311,9 +243,10 @@ class BulkCourseCrawler {
         ? realCourses.slice(0, this.testCount)
         : realCourses;
       
-      // Filter out courses we've already completed
+      // Filter out courses we've already completed (convert to Set for O(1) lookups)
+      const completedSet = new Set(this.progress.completedCourses);
       const remainingCourses = allCoursesToCrawl.filter(course => 
-        !this.progress.completedCourses.includes(course.code)
+        !completedSet.has(course.code)
       );
       
       console.log(`🎯 Courses remaining to crawl: ${remainingCourses.length}\n`);
@@ -341,23 +274,12 @@ class BulkCourseCrawler {
         console.log(`\n[${i + 1}/${remainingCourses.length}] Processing: ${courseCode}`);
         console.log(''); // Add spacing
         
-        // Skip if already crawled (double-check with database)
-        if (await this.isCourseAlreadyCrawled(courseCode)) {
-          console.log(`⏭️  ${courseCode} already has data, skipping...`);
-          coursesSkippedThisRun++;
-          continue;
-        }
-        
         // Crawl the course
         const result = await this.crawlSingleCourse(courseCode);
         
         if (result.success) {
           this.progress.coursesCompleted++;
           this.progress.completedCourses.push(courseCode);
-          // Update cache to reflect newly crawled course
-          this.crawledCoursesCache.add(courseCode.toUpperCase());
-          
-          // Mark as fully crawled in persistent storage (done by crawler itself)
           console.log(`🎯 Course ${courseCode} completed successfully`);
         } else {
           this.progress.coursesFailed++;
@@ -438,15 +360,9 @@ class BulkCourseCrawler {
       console.warn('Could not generate database summary:', error);
     }
     
-    // Clean up progress file for successful runs
-    if (this.progress.coursesFailed === 0) {
-      try {
-        fs.unlinkSync(this.progressFile);
-        console.log(`🧹 Progress file cleaned up (all courses successful)`);
-      } catch (error) {
-        console.warn('Could not clean up progress file:', error);
-      }
-    }
+    // Keep progress file as permanent record of crawled courses
+    this.saveProgress();
+    console.log(`📁 Progress file saved as permanent record: ${this.progressFile}`);
     
     console.log(`\n✅ Bulk crawl session complete!`);
     console.log(`=`.repeat(50));

@@ -24,8 +24,7 @@ async function clearEverything() {
   await prisma.course.deleteMany();
   console.log('✅ Cleared courses');
   
-  await prisma.crawledCourse.deleteMany();
-  console.log('✅ Cleared crawled course tracking');
+
   
   // Clear progress files
   const progressFiles = [
