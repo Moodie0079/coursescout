@@ -92,10 +92,13 @@ export class SimpleComprehensiveCrawler {
       if (reset) {
         this.rateLimitResetTime = parseInt(reset) * 1000; // Convert Unix timestamp to milliseconds
         const waitTimeSeconds = Math.max(0, (this.rateLimitResetTime - Date.now()) / 1000);
-        console.log(`🚫 RATE LIMITED - Waiting ${Math.ceil(waitTimeSeconds)}s for quota reset...`);
+        console.log(`🚫 RATE LIMITED - Reddit reset header: ${reset}`);
+        console.log(`🚫 Current time: ${Date.now()}, Reset time: ${this.rateLimitResetTime}`);
+        console.log(`🚫 Calculated wait: ${waitTimeSeconds}s - Waiting...`);
         await this.delay(waitTimeSeconds * 1000);
         this.remainingRequests = 100; // Reset quota
-        return this.fetchWithRetry(url); // Retry immediately after reset
+        console.log(`🔄 Wait complete, continuing with fresh quota...`);
+        // Don't retry - just continue, the next request should work
       }
     }
 
