@@ -37,6 +37,44 @@ export class SimpleComprehensiveCrawler {
   private rateLimitDelay = 100; // Minimal delay between requests
   private remainingRequests = 100; // Track remaining quota
   private rateLimitResetTime = 0; // When quota resets
+
+  /**
+   * Check current rate limit status before starting crawling
+   */
+  async checkInitialRateLimit(): Promise<void> {
+    console.log('🔍 Checking current Reddit rate limit status...');
+    try {
+      // Make a simple test request to get current quota
+      const testResponse = await fetch('https://www.reddit.com/r/CarletonU/about.json', {
+        headers: {
+          'User-Agent': 'CourseScout/1.0.0',
+          'Accept': 'application/json'
+        }
+      });
+
+      // Update our tracking from headers
+      const remaining = testResponse.headers.get('x-ratelimit-remaining');
+      const reset = testResponse.headers.get('x-ratelimit-reset');
+      
+      if (remaining) this.remainingRequests = parseFloat(remaining);
+      if (reset) this.rateLimitResetTime = parseInt(reset) * 1000;
+
+      console.log(`📊 Current quota: ${this.remainingRequests} requests remaining`);
+      
+      if (this.remainingRequests <= 0 && Date.now() < this.rateLimitResetTime) {
+        const waitTimeSeconds = Math.ceil((this.rateLimitResetTime - Date.now()) / 1000);
+        console.log(`⏳ Already rate limited! Need to wait ${waitTimeSeconds}s before starting...`);
+        console.log(`💤 Waiting for rate limit to reset...`);
+        await this.delay(waitTimeSeconds * 1000);
+        this.remainingRequests = 100;
+        console.log(`✅ Rate limit reset! Ready to start crawling.`);
+      } else {
+        console.log(`✅ Ready to start crawling with ${this.remainingRequests} requests available.`);
+      }
+    } catch (error) {
+      console.warn('⚠️  Could not check initial rate limit status, proceeding anyway:', error);
+    }
+  }
   
   private buildSearchQueries(courseCode: string): string[] {
     const [dept, num] = courseCode.split(' ');
@@ -597,6 +635,7 @@ async function main() {
   }
   
   const crawler = new SimpleComprehensiveCrawler();
+  await crawler.checkInitialRateLimit();
   await crawler.searchAndStoreCourse(courseCode);
 }
 
