@@ -114,7 +114,12 @@ export class SimpleComprehensiveCrawler {
       const reset = response.headers.get('x-ratelimit-reset');
       
       if (remaining) this.remainingRequests = parseFloat(remaining);
-      if (reset) this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000); // Add seconds to current time
+      if (reset) {
+        // Use Reddit's server time for accurate calculations
+        const serverTime = response.headers.get('date');
+        const baseTime = serverTime ? new Date(serverTime).getTime() : Date.now();
+        this.rateLimitResetTime = baseTime + (parseInt(reset) * 1000);
+      }
       
       // Only log if remaining requests are getting low
       if (this.remainingRequests <= 10) {
@@ -128,8 +133,11 @@ export class SimpleComprehensiveCrawler {
       this.remainingRequests = 0;
       const reset = response.headers.get('x-ratelimit-reset');
       if (reset) {
-        this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000); // Add seconds to current time
-        const waitTimeSeconds = Math.max(0, (this.rateLimitResetTime - Date.now()) / 1000);
+        // Use Reddit's server time if available for more accurate calculations
+        const serverTime = response.headers.get('date');
+        const baseTime = serverTime ? new Date(serverTime).getTime() : Date.now();
+        this.rateLimitResetTime = baseTime + (parseInt(reset) * 1000);
+        const waitTimeSeconds = Math.max(30, (this.rateLimitResetTime - Date.now()) / 1000); // Minimum 30s wait
         console.log(`🚫 RATE LIMITED - Reddit reset header: ${reset}`);
         console.log(`🚫 Current time: ${Date.now()}, Reset time: ${this.rateLimitResetTime}`);
         console.log(`🚫 Calculated wait: ${waitTimeSeconds}s - Waiting...`);
