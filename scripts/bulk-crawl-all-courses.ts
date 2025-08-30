@@ -149,6 +149,9 @@ class BulkCourseCrawler {
       const { SimpleComprehensiveCrawler } = await import('./crawl-reddit');
       const crawler = new SimpleComprehensiveCrawler();
       
+      // Check rate limit status before crawling
+      await crawler.checkInitialRateLimit();
+      
       const startTime = Date.now();
       await crawler.searchAndStoreCourse(courseCode);
       const endTime = Date.now();
