@@ -232,7 +232,7 @@ class BulkCourseCrawler {
       console.log(`📚 Total courses to process: ${this.progress.totalCourses}`);
       console.log(`🔄 Already completed: ${this.progress.coursesCompleted}`);
       console.log(`⚡ Rate limiting: Intelligent delays to avoid Reddit 429s`);
-      console.log(`💾 Progress saving: Every ${this.batchSize} courses`);
+      console.log(`💾 Progress saving: After every course`);
       
       // Get the list of courses to crawl
       const allCoursesToCrawl = this.testMode 
