@@ -141,16 +141,9 @@ class BulkCourseCrawler {
    * - Handles errors gracefully
    * - Updates progress tracking
    */
-  private async crawlSingleCourse(courseCode: string): Promise<{ success: boolean; stats?: any; error?: string }> {
+  private async crawlSingleCourseWithCrawler(courseCode: string, crawler: any): Promise<{ success: boolean; stats?: any; error?: string }> {
     try {
       console.log(`\n🕷️  Crawling ${courseCode}...`);
-      
-      // Dynamic import to avoid circular dependencies
-      const { SimpleComprehensiveCrawler } = await import('./crawl-reddit');
-      const crawler = new SimpleComprehensiveCrawler();
-      
-      // Check rate limit status before crawling
-      await crawler.checkInitialRateLimit();
       
       const startTime = Date.now();
       await crawler.searchAndStoreCourse(courseCode);
@@ -262,6 +255,11 @@ class BulkCourseCrawler {
       // Track courses discovered as already crawled during this run
       let coursesSkippedThisRun = 0;
       
+      // Create ONE crawler instance for all courses
+      const { SimpleComprehensiveCrawler } = await import('./crawl-reddit');
+      const crawler = new SimpleComprehensiveCrawler();
+      await crawler.checkInitialRateLimit();
+      
       // Crawl each remaining course
       for (let i = 0; i < remainingCourses.length; i++) {
         const course = remainingCourses[i];
@@ -278,7 +276,7 @@ class BulkCourseCrawler {
         console.log(''); // Add spacing
         
         // Crawl the course
-        const result = await this.crawlSingleCourse(courseCode);
+        const result = await this.crawlSingleCourseWithCrawler(courseCode, crawler);
         
         if (result.success) {
           this.progress.coursesCompleted++;

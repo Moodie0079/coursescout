@@ -57,7 +57,7 @@ export class SimpleComprehensiveCrawler {
       const reset = testResponse.headers.get('x-ratelimit-reset');
       
       if (remaining) this.remainingRequests = parseFloat(remaining);
-      if (reset) this.rateLimitResetTime = parseInt(reset) * 1000;
+      if (reset) this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000);
 
       console.log(`📊 Current quota: ${this.remainingRequests} requests remaining`);
       
@@ -114,7 +114,7 @@ export class SimpleComprehensiveCrawler {
       const reset = response.headers.get('x-ratelimit-reset');
       
       if (remaining) this.remainingRequests = parseFloat(remaining);
-      if (reset) this.rateLimitResetTime = parseInt(reset) * 1000; // Convert Unix timestamp to milliseconds
+      if (reset) this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000); // Add seconds to current time
       
       // Only log if remaining requests are getting low
       if (this.remainingRequests <= 10) {
@@ -128,7 +128,7 @@ export class SimpleComprehensiveCrawler {
       this.remainingRequests = 0;
       const reset = response.headers.get('x-ratelimit-reset');
       if (reset) {
-        this.rateLimitResetTime = parseInt(reset) * 1000; // Convert Unix timestamp to milliseconds
+        this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000); // Add seconds to current time
         const waitTimeSeconds = Math.max(0, (this.rateLimitResetTime - Date.now()) / 1000);
         console.log(`🚫 RATE LIMITED - Reddit reset header: ${reset}`);
         console.log(`🚫 Current time: ${Date.now()}, Reset time: ${this.rateLimitResetTime}`);
@@ -140,7 +140,10 @@ export class SimpleComprehensiveCrawler {
       }
     }
 
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    // For other HTTP errors, log and return the response anyway
+    // Let the caller handle the error gracefully instead of crashing
+    console.warn(`⚠️  HTTP ${response.status}: ${response.statusText} - continuing anyway`);
+    return response;
   }
 
   private async checkRateLimit(): Promise<void> {
