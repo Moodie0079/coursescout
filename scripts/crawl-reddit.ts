@@ -76,7 +76,7 @@ export class SimpleComprehensiveCrawler {
       const reset = response.headers.get('x-ratelimit-reset');
       
       if (remaining) this.remainingRequests = parseFloat(remaining);
-      if (reset) this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000);
+      if (reset) this.rateLimitResetTime = parseInt(reset) * 1000; // Convert Unix timestamp to milliseconds
       
       // Only log if remaining requests are getting low
       if (this.remainingRequests <= 10) {
@@ -90,7 +90,7 @@ export class SimpleComprehensiveCrawler {
       this.remainingRequests = 0;
       const reset = response.headers.get('x-ratelimit-reset');
       if (reset) {
-        this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000);
+        this.rateLimitResetTime = parseInt(reset) * 1000; // Convert Unix timestamp to milliseconds
         console.log(`🚫 RATE LIMITED - Waiting ${reset}s for quota reset...`);
         await this.delay(parseInt(reset) * 1000);
         this.remainingRequests = 100; // Reset quota

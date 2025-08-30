@@ -291,9 +291,11 @@ class BulkCourseCrawler {
           console.log(`💥 Course ${courseCode} failed: ${result.error || 'Unknown error'}`);
         }
         
-        // Save progress and show update every batch
+        // Save progress after every course
+        this.saveProgress();
+        
+        // Show progress display every batch
         if ((i + 1) % this.batchSize === 0 || i === remainingCourses.length - 1) {
-          this.saveProgress();
           this.displayProgress();
         }
         
