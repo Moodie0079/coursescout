@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "CourseScout - Carleton University Course & Professor Insights",
-  description: "Discover what Carleton students really think about courses and professors through aggregated Reddit discussions and student insights.",
+  description: "Get real information about your schools courses and professors from real students experiences.",
   keywords: "Carleton University, course reviews, professor reviews, student insights, university courses",
   authors: [{ name: "CourseScout" }],
 };
