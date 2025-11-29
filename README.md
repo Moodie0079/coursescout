@@ -1,149 +1,88 @@
 # CourseScout
 
-A  course insight platform that analyzes Reddit discussions to give students information about courses at their school.
+A course insight platform that analyzes Reddit discussions to provide students with comprehensive information about courses at their university.
 
-## Features
+## 📚 Documentation
 
-- **Course Insights**: AI-powered analysis of Reddit discussions
-- **Professor Ratings**: Integration with RateMyProfessors
-- **Course Catalog**: Official course information from Carleton University
-- **Comprehensive Search**: Full historical analysis of the schools reddit
-- **Real-time Analysis**: Fast insights
+Complete documentation is available in the [`docs/`](./docs/) directory:
 
-## Architecture
+- **[Setup & User Guide](./docs/README.md)** - Installation, usage, deployment
+- **[Database System](./docs/DATABASE_SYSTEM.md)** - Technical documentation, schema, performance
 
-- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
-- **Backend**: Node.js API routes with Prisma ORM
-- **Database**: SQLite (development) / PostgreSQL (production)
-- **AI**: OpenAI GPT-4o-mini for analysis
-- **Data Sources**: Reddit API, RateMyProfessors, Carleton Course Catalog
+## 🚀 Quick Start
 
-## Quick Start
-
-### Prerequisites
-- Node.js 18+
-- npm or yarn
-- PostgreSQL (for production)
-
-### Development Setup
 ```bash
-
-# Clone the repository
-git clone https://github.com/Moodie0079/coursescout.git
-cd coursescout
-
 # Install dependencies
 npm install
 
-# Set up environment variables
-cp .env.example .env # Edit .env with your API keys
+# Configure environment
+cp .env.example .env
+# Edit .env with your DATABASE_URL and OPENAI_API_KEY
 
-# Set up database
+# Initialize database
+npx prisma migrate deploy
 npx prisma generate
-npx prisma db push
 
 # Start development server
 npm run dev
 ```
 
-### Environment Variables
+Visit [http://localhost:3000](http://localhost:3000)
+
+## 📖 Key Commands
+
 ```bash
-DATABASE_URL="your_database_url"
-OPENAI_API_KEY="your_openai_api_key"
-NODE_ENV="development"
+# Development
+npm run dev              # Start dev server
+npm run build            # Build for production
+npm start                # Start production server
+
+# Database
+npm run db:studio        # Browse database GUI
+npm run db:clear         # Clear all data
+
+# Crawling
+npm run crawl:single     # Crawl one course
+npm run crawl:bulk       # Crawl all courses
+npm run crawl:test       # Test mode (10 courses)
+
+# Cache Management
+npm run cache:clear      # Clear AI insights cache
+npm run professors:clear # Clear professor cache
 ```
 
-## Data Collection
+## 🏗️ Tech Stack
 
-### Crawl Individual Course
-```bash
-npx tsx scripts/crawl-reddit.ts "COMP 1005"
-```
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: PostgreSQL 15+ with GIN & B-Tree indexes
+- **AI**: OpenAI GPT-4o-mini
+- **Data**: Reddit (pre-crawled), RateMyProfessors (on-demand)
 
-### Bulk Crawl (Production)
-```bash
-# Crawl all courses
-npx tsx scripts/bulk-crawl-all-courses.ts
-
-# Test with limited courses
-npx tsx scripts/bulk-crawl-all-courses.ts --test --count=10
-```
-
-### Database Management
-```bash
-# Clear all data
-npx tsx scripts/clear-database.ts
-
-# Browse stored courses
-npx tsx scripts/browse-courses.ts
-```
-
-## Production Deployment
-
-### Server Requirements
-- Linux server with root access
-- Node.js 18+
-- PostgreSQL 12+
-- Nginx
-- PM2
-
-### Deployment Steps
-1. **Server Setup**: Install dependencies
-2. **Database**: Configure PostgreSQL
-3. **Code Deployment**: Clone and build
-4. **Process Management**: Use PM2
-5. **Reverse Proxy**: Configure Nginx
-6. **SSL**: Set up certificates
-7. **Domain**: Configure DNS
-8. **Automation**: Schedule crawling
-
-See deployment documentation for detailed steps.
-
-## Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 coursescout/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── components/        # React components
-│   └── types.ts          # TypeScript definitions
-├── lib/                   # Utility libraries
-│   ├── ai-processor.ts   # AI analysis
-│   ├── db-reddit-api.ts  # Database operations
-│   └── carleton-catalog.ts
-├── prisma/               # Database schema
+├── app/                  # Next.js app (pages, components, API)
+├── lib/                  # Core libraries & utilities
+│   ├── services/         # Business logic
+│   ├── types/            # TypeScript definitions
+│   ├── prompts/          # AI prompts
+│   └── utils/            # Utility functions
 ├── scripts/              # Data collection scripts
-└── real-carleton-courses.json # Course data
+├── prisma/               # Database schema & migrations
+├── docs/                 # Documentation
+└── real-carleton-courses.json
 ```
 
-## Security Features
-
-- Input validation and sanitization
-- SQL injection protection
-- Rate limiting for API calls
-- Environment variable protection
-
-## Performance
-
-- O(1) course lookup with caching
-- Crawl tracking
-- Optimized database queries
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+4. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License
+

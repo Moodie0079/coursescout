@@ -16,7 +16,9 @@
     "crawl:test": "tsx scripts/bulk-crawl-all-courses.ts --test --count=10",
     "db:clear": "tsx scripts/clear-database.ts",
     "courses:get": "tsx scripts/get-real-carleton-courses.ts",
-    "courses:browse": "tsx scripts/browse-courses.ts"
+    "courses:browse": "tsx scripts/browse-courses.ts",
+    "professors:clear": "tsx scripts/clear-professors.ts",
+    "cache:clear": "tsx scripts/clear-insights-cache.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -27,7 +29,7 @@
     "node-cache": "^5.1.2",
     "openai": "^4.70.1",
     "p-limit": "^7.0.0",
-    "rate-my-professor-api-ts": "^1.0.5",
+    "rate-limiter-flexible": "^8.2.1",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

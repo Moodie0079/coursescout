@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { ExternalLink, Info, ThumbsUp, ThumbsDown, Brain, Clock, BarChart3, Quote as QuoteIcon, AlertTriangle } from 'lucide-react';
-import { SearchResult, SearchFilters, CircuitBreakerStatus } from '../types';
+import { SearchResult } from '../../lib/types';
+import { LOADING_PHASE_TIMES } from '../../lib/constants';
 
 interface InsightsDisplayProps {
   result: SearchResult;
 }
 
 export default function InsightsDisplay({ result }: InsightsDisplayProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
   const [shouldAnimate, setShouldAnimate] = useState(true);
 
   // Trigger animation when new results come in
@@ -22,7 +22,7 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
   }, [result.insights]); // Only depend on actual insights, not loading state
 
   if (result.loading) {
-    return <LoadingState circuitBreakerStatus={result.circuitBreakerStatus} />;
+    return <LoadingState />;
   }
 
   if (result.error) {
@@ -33,7 +33,7 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
     return <NoResultsState />;
   }
 
-  const { insights, course, professor } = result;
+  const { insights, course } = result;
 
   return (
     <div className={`w-full min-h-screen p-4 lg:p-6 fade-in ${shouldAnimate ? 'visible' : ''}`}>
@@ -131,7 +131,9 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                     </div>
                   </div>
                   <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-3xl font-bold text-orange-400">{insights.difficulty.score}</span>
+                    <span className="text-3xl font-bold text-orange-400">
+                      {insights.difficulty.score !== null ? insights.difficulty.score : '?'}
+                    </span>
                     <span className="text-lg text-slate-400">/10</span>
                   </div>
                   <p className="text-slate-300 text-sm leading-relaxed">{insights.difficulty.reason}</p>
@@ -154,7 +156,9 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                     </div>
                   </div>
                   <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-3xl font-bold text-blue-400">{insights.workload.score}</span>
+                    <span className="text-3xl font-bold text-blue-400">
+                      {insights.workload.score !== null ? insights.workload.score : '?'}
+                    </span>
                     <span className="text-lg text-slate-400">/10</span>
                   </div>
                   <p className="text-slate-300 text-sm leading-relaxed">{insights.workload.reason}</p>
@@ -349,11 +353,9 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                       </div>
                     ))
                   ) : (
-                    insights.pros.map((pro, index) => (
-                      <div key={index} className="text-xs text-slate-300 leading-relaxed">
-                        • {pro.text}
-                      </div>
-                    ))
+                    <div className="text-xs text-slate-400 italic">
+                      Insufficient data - no specific student benefits mentioned in discussions
+                    </div>
                   )}
                 </div>
               </div>
@@ -372,11 +374,9 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                       </div>
                     ))
                   ) : (
-                    insights.cons.map((con, index) => (
-                      <div key={index} className="text-xs text-slate-300 leading-relaxed">
-                        • {con.text}
-                      </div>
-                    ))
+                    <div className="text-xs text-slate-400 italic">
+                      Insufficient data - no specific concerns mentioned in discussions
+                    </div>
                   )}
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                       <div key={index}>• {prereq.text}</div>
                     ))
                   ) : (
-                    <div>• Check official course prerequisites in catalog</div>
+                    <div className="text-slate-400 italic">Insufficient data - check official course prerequisites in catalog</div>
                   )}
                 </div>
               </div>
@@ -410,7 +410,7 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
                       <div key={index}>• {expectation.text}</div>
                     ))
                   ) : (
-                    <div>• Course format details will vary by instructor</div>
+                    <div className="text-slate-400 italic">Insufficient data - course format details will vary by instructor</div>
                   )}
                 </div>
               </div>
@@ -533,10 +533,6 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
             </div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Time Period</span>
-                <span className="text-white font-medium">{insights.coverage.timeWindow}</span>
-              </div>
-              <div className="flex justify-between items-center">
                 <span className="text-slate-400 text-sm">Threads Considered</span>
                 <span className="text-white font-medium">{insights.coverage.threadsConsidered}</span>
               </div>
@@ -600,7 +596,7 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
   );
 }
 
-function LoadingState({ circuitBreakerStatus }: { circuitBreakerStatus?: CircuitBreakerStatus }) {
+function LoadingState() {
   const [loadingTime, setLoadingTime] = useState(0);
   const [currentPhase, setCurrentPhase] = useState('searching');
 
@@ -611,9 +607,9 @@ function LoadingState({ circuitBreakerStatus }: { circuitBreakerStatus?: Circuit
       setLoadingTime(elapsed);
 
       // Update phase based on elapsed time
-      if (elapsed < 5) {
+      if (elapsed < LOADING_PHASE_TIMES.SEARCHING) {
         setCurrentPhase('searching');
-      } else if (elapsed < 15) {
+      } else if (elapsed < LOADING_PHASE_TIMES.PROCESSING) {
         setCurrentPhase('processing');  
       } else {
         setCurrentPhase('finalizing');
@@ -710,19 +706,43 @@ function LoadingState({ circuitBreakerStatus }: { circuitBreakerStatus?: Circuit
 }
 
 function ErrorState({ message }: { message: string }) {
+  // Determine if it's a "not found" error vs other error
+  const isNotFound = message.toLowerCase().includes('not found') || 
+                     message.toLowerCase().includes('no discussions');
+  
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="bg-red-900/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-red-500/30 p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-pink-500/5 pointer-events-none"></div>
+      <div className={`backdrop-blur-xl rounded-3xl shadow-2xl p-12 relative overflow-hidden ${
+        isNotFound 
+          ? 'bg-slate-800/40 border border-slate-700/50' 
+          : 'bg-red-900/20 border border-red-500/30'
+      }`}>
+        <div className={`absolute inset-0 pointer-events-none ${
+          isNotFound 
+            ? 'bg-gradient-to-br from-blue-500/5 to-purple-500/5' 
+            : 'bg-gradient-to-br from-red-500/5 to-pink-500/5'
+        }`}></div>
         <div className="relative z-10 text-center">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle size={32} className="text-red-400" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            isNotFound ? 'bg-slate-700/50' : 'bg-red-500/20'
+          }`}>
+            {isNotFound ? (
+              <Info size={32} className="text-slate-400" />
+            ) : (
+              <AlertTriangle size={32} className="text-red-400" />
+            )}
           </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Analysis Failed</h2>
-          <p className="text-red-200 mb-6">{message}</p>
-          <p className="text-slate-400 text-sm">
-            Please try again with a different course code or check your internet connection.
+          <h2 className="text-2xl font-bold text-white mb-4">
+            {isNotFound ? 'Course Not Found' : 'Analysis Error'}
+          </h2>
+          <p className={`mb-6 text-lg ${isNotFound ? 'text-slate-300' : 'text-red-200'}`}>
+            {message}
           </p>
+          {!isNotFound && (
+            <p className="text-slate-400 text-sm">
+              Please try again or contact support if the issue persists.
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -3,9 +3,16 @@
 import { config } from 'dotenv';
 config();
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import {
+  CRAWL_RATE_LIMIT_DELAY,
+  REDDIT_RATE_LIMIT_QUOTA,
+  REDDIT_MIN_WAIT_TIME_SECONDS,
+  REDDIT_REQUEST_LIMIT,
+  REDDIT_SEARCH_PAGE_SIZE,
+  REDDIT_MAX_SEARCH_PAGES,
+  REDDIT_MAX_COMMENT_DEPTH
+} from '../lib/constants';
 
 interface RedditPost {
   id: string;
@@ -34,15 +41,15 @@ interface RedditThread {
 }
 
 export class SimpleComprehensiveCrawler {
-  private rateLimitDelay = 100; // Minimal delay between requests
-  private remainingRequests = 100; // Track remaining quota
-  private rateLimitResetTime = 0; // When quota resets
+  private rateLimitDelay = CRAWL_RATE_LIMIT_DELAY;
+  private remainingRequests = REDDIT_RATE_LIMIT_QUOTA;
+  private rateLimitResetTime = 0; // Unix timestamp when quota resets
 
   /**
    * Check current rate limit status before starting crawling
    */
   async checkInitialRateLimit(): Promise<void> {
-    console.log('🔍 Checking current Reddit rate limit status...');
+    console.log('Checking Reddit rate limit...');
     try {
       // Make a simple test request to get current quota
       const testResponse = await fetch('https://www.reddit.com/r/CarletonU/about.json', {
@@ -59,20 +66,18 @@ export class SimpleComprehensiveCrawler {
       if (remaining) this.remainingRequests = parseFloat(remaining);
       if (reset) this.rateLimitResetTime = Date.now() + (parseInt(reset) * 1000);
 
-      console.log(`📊 Current quota: ${this.remainingRequests} requests remaining`);
       
       if (this.remainingRequests <= 0 && Date.now() < this.rateLimitResetTime) {
         const waitTimeSeconds = Math.ceil((this.rateLimitResetTime - Date.now()) / 1000);
-        console.log(`⏳ Already rate limited! Need to wait ${waitTimeSeconds}s before starting...`);
-        console.log(`💤 Waiting for rate limit to reset...`);
+        console.log(`Rate limited. Waiting ${waitTimeSeconds}s...`);
         await this.delay(waitTimeSeconds * 1000);
-        this.remainingRequests = 100;
-        console.log(`✅ Rate limit reset! Ready to start crawling.`);
+        this.remainingRequests = REDDIT_RATE_LIMIT_QUOTA;
+        console.log(`Rate limit reset. Ready to crawl.`);
       } else {
-        console.log(`✅ Ready to start crawling with ${this.remainingRequests} requests available.`);
+        console.log(`Ready to crawl.\n`);
       }
     } catch (error) {
-      console.warn('⚠️  Could not check initial rate limit status, proceeding anyway:', error);
+      console.warn('Could not check rate limit, proceeding anyway');
     }
   }
   
@@ -97,7 +102,6 @@ export class SimpleComprehensiveCrawler {
     await this.checkRateLimit();
     
     const startTime = Date.now();
-    console.log(`🌐 Making request (${this.remainingRequests} remaining): ${url.includes('search') ? 'search API' : 'thread API'}`);
 
     const response = await fetch(url, {
       headers: {
@@ -123,7 +127,7 @@ export class SimpleComprehensiveCrawler {
       
       // Only log if remaining requests are getting low
       if (this.remainingRequests <= 10) {
-        console.log(`⚠️  Low quota: ${this.remainingRequests} requests remaining`);
+        console.log(`Low quota: ${this.remainingRequests} requests remaining`);
       }
       return response;
     }
@@ -137,20 +141,18 @@ export class SimpleComprehensiveCrawler {
         const serverTime = response.headers.get('date');
         const baseTime = serverTime ? new Date(serverTime).getTime() : Date.now();
         this.rateLimitResetTime = baseTime + (parseInt(reset) * 1000);
-        const waitTimeSeconds = Math.max(30, (this.rateLimitResetTime - Date.now()) / 1000); // Minimum 30s wait
-        console.log(`🚫 RATE LIMITED - Reddit reset header: ${reset}`);
-        console.log(`🚫 Current time: ${Date.now()}, Reset time: ${this.rateLimitResetTime}`);
-        console.log(`🚫 Calculated wait: ${waitTimeSeconds}s - Waiting...`);
+        const waitTimeSeconds = Math.max(REDDIT_MIN_WAIT_TIME_SECONDS, (this.rateLimitResetTime - Date.now()) / 1000);
+        console.log(`RATE LIMITED - Waiting ${Math.ceil(waitTimeSeconds)}s...`);
         await this.delay(waitTimeSeconds * 1000);
-        this.remainingRequests = 100; // Reset quota
-        console.log(`🔄 Wait complete, continuing with fresh quota...`);
+        this.remainingRequests = REDDIT_RATE_LIMIT_QUOTA;
+        console.log(`Rate limit reset. Continuing...`);
         // Don't retry - just continue, the next request should work
       }
     }
 
     // For other HTTP errors, log and return the response anyway
     // Let the caller handle the error gracefully instead of crashing
-    console.warn(`⚠️  HTTP ${response.status}: ${response.statusText} - continuing anyway`);
+    console.warn(`HTTP ${response.status}: ${response.statusText}`);
     return response;
   }
 
@@ -158,10 +160,10 @@ export class SimpleComprehensiveCrawler {
     // If we're out of requests and haven't reached reset time, wait
     if (this.remainingRequests <= 0 && Date.now() < this.rateLimitResetTime) {
       const waitTime = Math.ceil((this.rateLimitResetTime - Date.now()) / 1000);
-      console.log(`💤 Waiting ${waitTime}s for rate limit reset...`);
+      console.log(`Waiting ${waitTime}s for rate limit reset...`);
       await this.delay(waitTime * 1000);
-      this.remainingRequests = 100; // Fresh quota
-      console.log(`🔄 Rate limit reset! Fresh quota of 100 requests available.`);
+      this.remainingRequests = REDDIT_RATE_LIMIT_QUOTA;
+      console.log(`Rate limit reset. Fresh quota available.`);
     }
     
     // Small delay to avoid overwhelming the API
@@ -170,7 +172,7 @@ export class SimpleComprehensiveCrawler {
 
   private async fetchCompleteThread(permalink: string): Promise<RedditThread | null> {
     try {
-      const url = `https://www.reddit.com${permalink}.json?limit=1000&sort=top`;
+      const url = `https://www.reddit.com${permalink}.json?limit=${REDDIT_REQUEST_LIMIT}&sort=top`;
       const response = await this.fetchWithRetry(url);
       const data = await response.json();
       
@@ -223,8 +225,8 @@ export class SimpleComprehensiveCrawler {
           permalink: `https://reddit.com${comment.permalink}`
         });
         
-        // Recursively extract replies (limit depth)
-        if (comment.replies && comment.replies.data && comment.replies.data.children && depth < 10) {
+        // Recursively extract replies (limit depth to prevent stack overflow)
+        if (comment.replies && comment.replies.data && comment.replies.data.children && depth < REDDIT_MAX_COMMENT_DEPTH) {
           this.extractCommentsRecursively(comment.replies.data.children, comments, depth + 1);
         }
       }
@@ -268,59 +270,52 @@ export class SimpleComprehensiveCrawler {
     return [...new Set(matches)]; // Remove duplicates
   }
 
-  private async updateCourseData(primaryCourse: string, allCourseCodes: string[], savedPost: any, postData: any): Promise<void> {
+  /**
+   * Updates Course table statistics for all courses mentioned in a post.
+   * - Searched course: marked as fully crawled + stats incremented
+   * - Other courses: stats incremented but not marked as fully crawled
+   */
+  private async updateCourseData(searchedCourse: string, allCourseCodes: string[], savedPost: any, postData: any): Promise<void> {
     const postDate = new Date(postData.created_utc * 1000);
     
-    // Ensure primary course exists in Course table
+    // Update searched course: mark as fully crawled + increment stats
     await prisma.course.upsert({
-      where: { courseCode: primaryCourse },
+      where: { courseCode: searchedCourse },
       update: {
         totalPosts: { increment: 1 },
         lastUpdated: new Date(),
-        latestPostDate: postDate
+        latestPostDate: postDate,
+        hasFullCrawl: true,
+        lastCrawledAt: new Date()
       },
       create: {
-        courseCode: primaryCourse,
+        courseCode: searchedCourse,
         totalPosts: 1,
         totalComments: 0,
         firstPostDate: postDate,
-        latestPostDate: postDate
+        latestPostDate: postDate,
+        hasFullCrawl: true,
+        lastCrawledAt: new Date()
       }
     });
 
-    // Create primary mention
-    await prisma.courseMention.create({
-      data: {
-        courseCode: primaryCourse,
-        postId: savedPost.id,
-        mentionType: 'primary'
-      }
-    });
-
-    // Create secondary mentions for other courses found in the post
+    // Update all other mentioned courses: increment stats but don't mark as fully crawled
     for (const courseCode of allCourseCodes) {
-      if (courseCode !== primaryCourse) {
-        // Ensure secondary course exists
+      if (courseCode !== searchedCourse) {
         await prisma.course.upsert({
           where: { courseCode: courseCode },
           update: {
-            lastUpdated: new Date()
+            totalPosts: { increment: 1 },  // ← FIX: Increment for all mentions
+            lastUpdated: new Date(),
+            latestPostDate: postDate
           },
           create: {
             courseCode: courseCode,
-            totalPosts: 0,
+            totalPosts: 1,  // ← FIX: Start at 1, not 0
             totalComments: 0,
             firstPostDate: postDate,
-            latestPostDate: postDate
-          }
-        });
-
-        // Create secondary mention
-        await prisma.courseMention.create({
-          data: {
-            courseCode: courseCode,
-            postId: savedPost.id,
-            mentionType: 'secondary'
+            latestPostDate: postDate,
+            hasFullCrawl: false
           }
         });
       }
@@ -343,21 +338,26 @@ export class SimpleComprehensiveCrawler {
     return variations.some(variation => textLower.includes(variation.toLowerCase()));
   }
 
+  /**
+   * Fetches all pages of search results for a query
+   * @param query Search term
+   * @param courseCode Course code to filter by
+   * @returns Array of Reddit posts
+   */
   private async searchAllPages(query: string, courseCode: string): Promise<any[]> {
     const allPosts: any[] = [];
     let after = null;
     let pageCount = 0;
-    const maxPages = 50; // Limit to prevent infinite loops
     
     do {
       pageCount++;
       const encodedQuery = encodeURIComponent(query);
 
-      // Hardcoded to r/CarletonU for now
-      const url = `https://www.reddit.com/r/CarletonU/search.json?q=${encodedQuery}&restrict_sr=1&sort=new&limit=100&t=all${after ? `&after=${after}` : ''}`;
+      // Search in r/CarletonU subreddit
+      const url = `https://www.reddit.com/r/CarletonU/search.json?q=${encodedQuery}&restrict_sr=1&sort=new&limit=${REDDIT_SEARCH_PAGE_SIZE}&t=all${after ? `&after=${after}` : ''}`;
       
       try {
-        console.log(`    📄 Page ${pageCount} for "${query}"...`);
+        console.log(`  Page ${pageCount}...`);
         const response = await this.fetchWithRetry(url);
         const data = await response.json();
         
@@ -371,20 +371,20 @@ export class SimpleComprehensiveCrawler {
           return this.containsCourseCode(fullText, courseCode);
         });
         
-        console.log(`    Found ${posts.length} posts, ${relevantPosts.length} contain course code`);
+        console.log(`  Matched: ${relevantPosts.length}/${posts.length}`);
         allPosts.push(...relevantPosts);
         
         after = data.data.after;
         
-        // If we got less than 100 posts, we've reached the end
-        if (posts.length < 100) break;
+        // If we got less than the page size, we've reached the end
+        if (posts.length < REDDIT_SEARCH_PAGE_SIZE) break;
         
       } catch (error) {
         console.warn(`Error fetching page ${pageCount}:`, error);
         break;
       }
       
-    } while (after && pageCount < maxPages);
+    } while (after && pageCount < REDDIT_MAX_SEARCH_PAGES);
     
     return allPosts;
   }
@@ -393,19 +393,15 @@ export class SimpleComprehensiveCrawler {
     // Validate and sanitize course code input
     const sanitizedCourseCode = this.validateAndSanitizeCourseCode(courseCode);
     if (!sanitizedCourseCode) {
-      console.error(`❌ Invalid course code format: "${courseCode}". Expected format: "DEPT ####" (e.g., "COMP 1005")`);
+      console.error(`Invalid course code format: "${courseCode}". Expected format: "DEPT ####" (e.g., "COMP 1005")`);
       throw new Error(`Invalid course code: ${courseCode}`);
     }
     
-    console.log(`Starting simple comprehensive crawler for ${sanitizedCourseCode}...`);
-    console.log(`Strategy: Search entire r/CarletonU history for any mention of course code`);
-    console.log(''); // Add spacing
+    console.log(`\nCrawling: ${sanitizedCourseCode}`);
+    console.log(`Subreddit: r/CarletonU`);
     
     const searchQueries = this.buildSearchQueries(sanitizedCourseCode);
-    
-    console.log(`Searching entire Reddit history for ${sanitizedCourseCode} mentions...`);
-    console.log(`Searching r/CarletonU with ${searchQueries.length} course code variations...`);
-    console.log(''); // Add spacing
+    console.log(`Variations: ${searchQueries.join(', ')}\n`);
     
     let totalPosts = 0;
     let totalComments = 0;
@@ -415,30 +411,27 @@ export class SimpleComprehensiveCrawler {
       // Search for each variation of the course code
       for (let i = 0; i < searchQueries.length; i++) {
         const query = searchQueries[i];
-        console.log(`  🔎 Query ${i+1}/${searchQueries.length}: "${query}"`);
+        console.log(`[${i+1}/${searchQueries.length}] Searching: "${query}"`);
         
         // Get ALL pages of results for this query
         const posts = await this.searchAllPages(query, sanitizedCourseCode);
-        console.log(`    Total posts found: ${posts.length}`);
-        console.log(''); // Add spacing between queries
+        console.log(`Found: ${posts.length} posts\n`);
         
         // Process each post
         for (const post of posts) {
           if (processedPostIds.has(post.id)) continue;
-          processedPostIds.add(post.id);
           
           // Skip posts with no comments if we want engagement
           if (post.num_comments === 0) {
-            console.log(`⏭️  Skipping "${post.title.slice(0, 50)}..." - no comments`);
             continue;
           }
           
-          console.log(`💾 Processing: ${post.title.slice(0, 50)}...`);
+          console.log(`Processing: "${post.title.slice(0, 60)}..." (${this.remainingRequests} requests remaining)`);
           
           try {
             // Extract course codes from post content
             const courseCodes = this.extractCourseCodes(post.title + ' ' + (post.selftext || ''));
-            const primaryCourse = courseCodes.length > 0 ? courseCodes[0] : courseCode.toUpperCase();
+            const searchedCourse = courseCode.toUpperCase();
 
             // Check if post already exists (duplicate detection)
             const existingPost = await prisma.post.findUnique({
@@ -446,11 +439,19 @@ export class SimpleComprehensiveCrawler {
             });
 
             if (existingPost) {
-              console.log(`⏭️  Duplicate post detected: ${post.title.slice(0, 50)}...`);
+              console.log(`  → Already stored, skipping\n`);
               continue;
             }
 
-            // Create the post
+            // Only track posts that are actually being stored
+            processedPostIds.add(post.id);
+
+            // Ensure searched course is always included in courseCodes
+            const allCourseCodes = courseCodes.length > 0 
+              ? (courseCodes.includes(searchedCourse) ? courseCodes : [...courseCodes, searchedCourse])
+              : [searchedCourse];
+
+            // Create the post with all course mentions
             const savedPost = await prisma.post.create({
               data: {
                 id: post.id,
@@ -460,12 +461,12 @@ export class SimpleComprehensiveCrawler {
                 score: post.score,
                 createdUtc: post.created_utc,
                 permalink: `https://reddit.com${post.permalink}`,
-                courseCode: primaryCourse
+                courseCodes: allCourseCodes
               }
             });
 
-            // Update Course summary and create mentions
-            await this.updateCourseData(primaryCourse, courseCodes, savedPost, post);
+            // Update Course summary
+            await this.updateCourseData(searchedCourse, allCourseCodes, savedPost, post);
             totalPosts++;
 
             // Fetch and store comments - check each comment for course code mentions
@@ -485,7 +486,6 @@ export class SimpleComprehensiveCrawler {
                     });
                     
                     if (existingComment) {
-                      console.log(`Duplicate comment detected: ${comment.id}`);
                       continue;
                     }
                     
@@ -501,11 +501,13 @@ export class SimpleComprehensiveCrawler {
                       }
                     });
                     
-                    // Update comment count for primary course
-                    await prisma.course.update({
-                      where: { courseCode: primaryCourse },
-                      data: { totalComments: { increment: 1 } }
-                    });
+                    // Increment comment count for ALL courses mentioned in this post
+                    for (const courseCode of courseCodes) {
+                      await prisma.course.update({
+                        where: { courseCode: courseCode },
+                        data: { totalComments: { increment: 1 } }
+                      });
+                    }
                     
                     totalComments++;
                   }
@@ -521,19 +523,16 @@ export class SimpleComprehensiveCrawler {
         }
       }
       
-      console.log(''); // Add spacing before completion
-      console.log(`✅ Crawling complete for ${sanitizedCourseCode}!`);
-      console.log(`📊 Stored: ${totalPosts} posts, ${totalComments} comments`);
-      console.log(`📊 Total unique posts processed: ${processedPostIds.size}`);
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`Crawl complete: ${sanitizedCourseCode}`);
+      console.log(`Stored: ${totalPosts} posts, ${totalComments} comments`);
+      console.log(`Processed: ${processedPostIds.size} unique posts`);
       
       // Update Course summary table with ALL mentions (primary + secondary)
       await this.updateCourseSummary(sanitizedCourseCode.toUpperCase());
       
-      console.log(`🎯 Course ${sanitizedCourseCode} crawling completed`);
-      console.log(''); // Add spacing at end
-      
     } catch (error) {
-      console.error(`❌ Error crawling ${sanitizedCourseCode}:`, error);
+      console.error(`\nError crawling ${sanitizedCourseCode}:`, error);
       throw error;
     } finally {
       await prisma.$disconnect();
@@ -548,18 +547,16 @@ export class SimpleComprehensiveCrawler {
     // Additional validation and sanitization for database operations
     const sanitized = this.validateAndSanitizeCourseCode(courseCode);
     if (!sanitized) {
-      console.warn(`⚠️  Skipping course summary update for invalid course code: ${courseCode}`);
+      console.warn(`Skipping course summary update for invalid course code: ${courseCode}`);
       return;
     }
     
     try {
-      // Count all posts that mention this course (primary OR secondary)
+      // Count all posts that mention this course in their courseCodes array
       const totalPosts = await prisma.post.count({
         where: {
-          mentions: {
-            some: {
-              courseCode: sanitized
-            }
+          courseCodes: {
+            has: sanitized
           }
         }
       });
@@ -568,10 +565,8 @@ export class SimpleComprehensiveCrawler {
       const totalComments = await prisma.comment.count({
         where: {
           post: {
-            mentions: {
-              some: {
-                courseCode: sanitized
-              }
+            courseCodes: {
+              has: sanitized
             }
           }
         }
@@ -580,10 +575,8 @@ export class SimpleComprehensiveCrawler {
       // Get date range of posts
       const postDates = await prisma.post.findMany({
         where: {
-          mentions: {
-            some: {
-              courseCode: sanitized
-            }
+          courseCodes: {
+            has: sanitized
           }
         },
         select: {
@@ -621,10 +614,11 @@ export class SimpleComprehensiveCrawler {
         }
       });
       
-      console.log(`📊 Updated course summary: ${sanitized} - ${totalPosts} posts, ${totalComments} comments`);
+      console.log(`Summary: ${totalPosts} posts, ${totalComments} comments`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       
     } catch (error) {
-      console.warn(`Warning: Could not update course summary for ${sanitized}:`, error);
+      console.warn(`Could not update course summary:`, error);
     }
   }
 }
@@ -634,14 +628,14 @@ async function main() {
   const courseCode = process.argv[2];
   
   if (!courseCode) {
-    console.error('❌ Please provide a course code (e.g., "COMP 1005")');
+    console.error('Please provide a course code (e.g., "COMP 1005")');
     process.exit(1);
   }
   
   // Additional validation for direct script execution
   const coursePattern = /^[A-Z]{2,5}\s+\d{4}$/;
   if (!coursePattern.test(courseCode.trim())) {
-    console.error(`❌ Invalid course code format: "${courseCode}". Expected format: "DEPT ####" (e.g., "COMP 1005")`);
+    console.error(`Invalid course code format: "${courseCode}". Expected format: "DEPT ####" (e.g., "COMP 1005")`);
     process.exit(1);
   }
   

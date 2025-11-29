@@ -1,7 +1,8 @@
-import * as fs from 'fs';
-import { PrismaClient } from '@prisma/client';
+import { config } from 'dotenv';
+config();
 
-const prisma = new PrismaClient();
+import * as fs from 'fs';
+import { prisma } from '../lib/prisma';
 
 interface Course 
 {

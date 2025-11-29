@@ -3,14 +3,10 @@
 import { useState, useEffect } from 'react';
 import SearchForm from './components/SearchForm';
 import InsightsDisplay from './components/InsightsDisplay';
-import { SearchResult, SearchFilters } from './types';
+import { SearchResult } from '../lib/types';
 
 export default function Home() {
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
-  const [filters, setFilters] = useState<SearchFilters>({
-    timeWindow: 'past-year',
-    showQuotes: true
-  });
   const [hasAnimated, setHasAnimated] = useState(false);
 
   // Set animation flag after first render to prevent re-animations
@@ -19,9 +15,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSearch = async (course: string, searchFilters: SearchFilters) => {
-    setFilters(searchFilters);
-    
+  const handleSearch = async (course: string) => {
     // Set loading state
     setSearchResult({
       course: course ? { code: course, title: course } : undefined,
@@ -35,23 +29,20 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          course: course,
-          timeWindow: searchFilters.timeWindow
+          course: course
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Search request failed');
-      }
-
       const result: SearchResult = await response.json();
+      
+      // Always set the result - error message will be in result.error if there's an issue
       setSearchResult(result);
     } catch (error) {
-      console.error('Search error:', error);
+      // Network error or JSON parse error
       setSearchResult({
         course: course ? { code: course, title: course } : undefined,
         loading: false,
-        error: 'Failed to fetch course insights. Please try again.'
+        error: 'Network error: Unable to connect to the server. Please check your connection and try again.'
       });
     }
   };

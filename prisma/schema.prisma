@@ -16,39 +16,34 @@ model Course {
   firstPostDate     DateTime?
   latestPostDate    DateTime?
   
-  // Relations
-  mentions          CourseMention[]
+  // Track if course has been explicitly crawled (not just discovered via mentions)
+  hasFullCrawl      Boolean  @default(false)
+  
+  // For future incremental crawling
+  lastCrawledAt     DateTime?
 }
 
 
 
 model Post {
-  id         String    @id
-  subreddit  String
-  title      String
-  body       String
-  score      Int
-  createdUtc Int
-  permalink  String
-  courseCode String    // Single primary course this post is about
-  comments   Comment[]
+  id            String    @id
+  subreddit     String
+  title         String
+  body          String
+  score         Int
+  createdUtc    Int
+  permalink     String
   
-  // Relations for course mentions
-  mentions   CourseMention[]
-}
-
-// Junction table for course mentions (handles multiple courses per post)
-model CourseMention {
-  id           String @id @default(cuid())
-  courseCode   String
-  postId       String
-  mentionType  String // 'primary' or 'secondary'
+  // Array of ALL courses mentioned in this post
+  courseCodes   String[]
   
-  // Relations
-  course       Course @relation(fields: [courseCode], references: [courseCode])
-  post         Post   @relation(fields: [postId], references: [id])
+  comments      Comment[]
   
-  @@unique([courseCode, postId])
+  // Indexes - GIN index enables fast array searches
+  @@index([courseCodes], type: Gin)
+  @@index([score])
+  @@index([createdUtc])
+  @@index([score, createdUtc])
 }
 
 model Comment {
@@ -60,4 +55,46 @@ model Comment {
   author     String?
   permalink  String
   createdUtc Int
+  
+  @@index([postId])
+  @@index([score])
+}
+
+model Professor {
+  id              String   @id @default(cuid())
+  
+  // RateMyProfessors ID for direct linking
+  rmpId           String?
+  
+  // Core data
+  fullName        String
+  avgRating       Float?
+  numRatings      Int      @default(0)
+  avgDifficulty   Float?
+  wouldTakeAgain  Int?
+  department      String?
+  
+  // Search optimization - pre-computed name variations
+  searchNames     String[]
+  
+  // Metadata
+  school          String   @default("Carleton University")
+  
+  // Timestamps
+  lastCheckedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Indexes for fast lookups
+  @@index([searchNames])
+  @@index([lastCheckedAt])
+  @@index([rmpId])
+}
+
+model CourseInsightsCache {
+  courseCode    String   @id
+  insights      Json     // Full Insights object as JSON
+  cachedAt      DateTime @default(now())
+  
+  @@index([courseCode])
 }

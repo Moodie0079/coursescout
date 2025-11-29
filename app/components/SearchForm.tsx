@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Search, Clock, X } from 'lucide-react';
-import { SearchFilters } from '../types';
-// Recent searches functionality removed for simplicity
+import { useState, useRef } from 'react';
+import { Search } from 'lucide-react';
+import { COURSE_CODE_PATTERN } from '../../lib/constants';
 
 interface SearchFormProps {
-  onSearch: (course: string, filters: SearchFilters) => void;
+  onSearch: (course: string) => void;
   loading: boolean;
 }
 
@@ -14,19 +13,11 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
   const [course, setCourse] = useState('');
   const [school, setSchool] = useState('carleton');
   const [validationError, setValidationError] = useState('');
-  // Removed recent searches state
-  const [didYouMeanSuggestions, setDidYouMeanSuggestions] = useState<string[]>([]);
-  const [filters] = useState<SearchFilters>({
-    timeWindow: 'all',
-    showQuotes: true
-  });
-  
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isValidCourseCode = (code: string): boolean => {
     // Carleton course codes: 4 letters followed by 4 numbers (e.g., COMP 1005)
-    const courseCodePattern = /^[A-Z]{4}\s[0-9]{4}$/;
-    return courseCodePattern.test(code.trim());
+    return COURSE_CODE_PATTERN.test(code.trim());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,11 +37,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     }
     
     setValidationError('');
-    setDidYouMeanSuggestions([]);
-    
-    // Recent searches functionality removed
-    
-    onSearch(trimmedCourse, filters);
+    onSearch(trimmedCourse);
   };
 
   const handleCourseChange = (value: string) => {
@@ -65,14 +52,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     // Clear validation error when user types
     if (validationError) {
       setValidationError('');
-      setDidYouMeanSuggestions([]);
     }
-  };
-
-  const handleRecentSearchClick = (courseCode: string) => {
-    setCourse(courseCode);
-    setValidationError('');
-    setDidYouMeanSuggestions([]);
   };
 
   const schools = [
