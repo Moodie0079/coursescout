@@ -12,13 +12,12 @@ CourseScout crawls and analyzes student discussions from Reddit to provide compr
 - Next.js 15 with React 19
 - TypeScript for type safety
 - Tailwind CSS for styling
-- Mobile-responsive design
 
 **Backend**
 - Next.js API Routes
 - Prisma ORM for database access
 - OpenAI GPT-4o-mini for analysis
-- PostgreSQL with advanced indexing
+- PostgreSQL with GIN indexing
 
 **Analytics**
 - Google Analytics 4 for usage tracking
@@ -27,7 +26,7 @@ CourseScout crawls and analyzes student discussions from Reddit to provide compr
 
 ### Data Collection
 
-The app doesn't make live API calls during searches. Instead, it uses a pre-crawled database:
+The app uses a pre-crawled database for instant searches:
 
 1. **Crawling**: Scripts fetch posts and comments from university subreddits (like r/CarletonU)
 2. **Storage**: All data is stored in PostgreSQL with course codes extracted and indexed
@@ -51,10 +50,6 @@ The database has 6 main tables:
 
 **SearchStats** - Tracks how many times each course has been searched
 
-### Why PostgreSQL Arrays?
-
-Posts are stored with course code arrays (`["COMP 1005", "MATH 1104"]`) instead of junction tables. This is because PostgreSQL's GIN (Generalized Inverted Index) makes array searches extremely fast - finding all posts mentioning "COMP 1005" takes ~5ms even with thousands of posts.
-
 ### Caching Strategy
 
 First search for a course: ~20-30 seconds (full OpenAI analysis)
@@ -63,12 +58,6 @@ Second search: <100ms (retrieved from cache)
 This makes the app fast while keeping OpenAI costs low.
 
 ## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- PostgreSQL 15+
-- OpenAI API key
 
 ### Installation
 
@@ -259,11 +248,6 @@ Status codes:
 - 120-second timeout protection
 - Prisma connection pooling
 
-**Scale:**
-- Handles 100-500 daily users comfortably
-- Can scale to 1,000+ with proper hosting
-- For 10,000+ users, Redis recommended for distributed caching
-
 ## Deployment
 
 ### Build
@@ -334,4 +318,4 @@ The app includes:
 
 ## License
 
-MIT License - See LICENSE file for details
+MIT License
