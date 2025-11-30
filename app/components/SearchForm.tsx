@@ -66,14 +66,14 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     <div className="w-full max-w-4xl mx-auto relative">
       {/* Search Form */}
       <form onSubmit={handleSubmit} className="mb-8">
-        <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-8 relative">
+        <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-4 sm:p-6 md:p-8 relative">
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 pointer-events-none"></div>
           
           <div className="relative z-10">
             {/* School Selector */}
-            <div className="mb-6">
-              <label htmlFor="school" className="block text-sm font-semibold text-slate-300 mb-4 tracking-wide uppercase">
+            <div className="mb-4 sm:mb-6">
+              <label htmlFor="school" className="block text-xs sm:text-sm font-semibold text-slate-300 mb-3 sm:mb-4 tracking-normal sm:tracking-wide uppercase">
                 Select University
               </label>
               <div className="relative group">
@@ -81,7 +81,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
                   id="school"
                   value={school}
                   onChange={(e) => setSchool(e.target.value)}
-                  className="w-full px-6 py-4 border-2 rounded-2xl focus:ring-4 focus:border-transparent outline-none transition-all duration-300 text-white bg-slate-900/50 text-lg font-medium backdrop-blur-sm border-slate-600/50 focus:ring-blue-500/20 focus:border-blue-400 group-hover:border-slate-500/70 appearance-none cursor-pointer"
+                  className="w-full px-4 sm:px-6 py-3 sm:py-4 border-2 rounded-2xl focus:ring-4 focus:border-transparent outline-none transition-all duration-300 text-white bg-slate-900/50 text-base sm:text-lg font-medium backdrop-blur-sm border-slate-600/50 focus:ring-blue-500/20 focus:border-blue-400 group-hover:border-slate-500/70 appearance-none cursor-pointer"
                 >
                   {schools.map((schoolOption) => (
                     <option
@@ -104,8 +104,8 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
             </div>
 
             {/* Course Input */}
-            <div className="mb-8 relative" style={{ zIndex: 200 }}>
-              <label htmlFor="course" className="block text-sm font-semibold text-slate-300 mb-4 tracking-wide uppercase">
+            <div className="mb-6 sm:mb-8 relative" style={{ zIndex: 200 }}>
+              <label htmlFor="course" className="block text-xs sm:text-sm font-semibold text-slate-300 mb-3 sm:mb-4 tracking-normal sm:tracking-wide uppercase">
                 Enter Course Code
               </label>
               <div className="relative group" style={{ zIndex: 100 }}>
@@ -116,7 +116,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
                   value={course}
                   onChange={(e) => handleCourseChange(e.target.value)}
                   placeholder="e.g., COMP 1005"
-                  className={`w-full px-6 py-4 border-2 rounded-2xl focus:ring-4 focus:border-transparent outline-none transition-all duration-300 text-white bg-slate-900/50 placeholder-slate-400 text-lg font-medium backdrop-blur-sm ${
+                  className={`w-full px-4 sm:px-6 py-3 sm:py-4 border-2 rounded-2xl focus:ring-4 focus:border-transparent outline-none transition-all duration-300 text-white bg-slate-900/50 placeholder-slate-400 text-base sm:text-lg font-medium backdrop-blur-sm ${
                     validationError 
                       ? 'border-red-500/50 focus:ring-red-500/20 focus:border-red-400' 
                       : 'border-slate-600/50 focus:ring-blue-500/20 focus:border-blue-400 group-hover:border-slate-500/70'
@@ -143,14 +143,14 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
               <button
                 type="submit"
                 disabled={loading || !course.trim()}
-                className="group relative flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-lg shadow-xl hover:shadow-2xl hover:shadow-blue-500/25 disabled:shadow-none transform hover:scale-105 disabled:transform-none"
+                className="group relative flex items-center justify-center gap-2 sm:gap-3 px-6 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl hover:from-blue-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all duration-300 font-semibold text-base sm:text-lg shadow-xl hover:shadow-2xl hover:shadow-blue-500/25 disabled:shadow-none transform hover:scale-105 disabled:transform-none w-full sm:w-auto min-h-[44px]"
               >
-                <Search size={22} className="group-hover:rotate-12 transition-transform duration-300" />
+                <Search size={20} className="group-hover:rotate-12 transition-transform duration-300 flex-shrink-0" />
                 <span>
-                  {loading ? 'Analyzing discussions...' : 'Get insights'}
+                  {loading ? 'Analyzing...' : 'Get insights'}
                 </span>
                 {loading && (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent flex-shrink-0"></div>
                 )}
               </button>
             </div>

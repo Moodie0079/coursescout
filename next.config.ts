@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     // pages
     pagesBufferLength: 2,
   },
+  // instrumentation.ts is enabled by default in Next.js 15+
 };
 
 export default nextConfig;

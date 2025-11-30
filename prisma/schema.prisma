@@ -91,10 +91,19 @@ model Professor {
   @@index([rmpId])
 }
 
-model CourseInsightsCache {
+model CourseCache {
   courseCode    String   @id
   insights      Json     // Full Insights object as JSON
   cachedAt      DateTime @default(now())
   
   @@index([courseCode])
+}
+
+model SearchStats {
+  courseCode      String   @id
+  searchCount     Int      @default(0)
+  lastSearched    DateTime @default(now())
+  
+  @@index([searchCount])
+  @@index([lastSearched])
 }

@@ -92,8 +92,10 @@ export class CourseInsightsService {
         logger.info(`[3/3] Professor data complete (${profTime}ms)`);
       }
 
-      // Cache the insights for future requests
-      await insightsCacheService.set(courseCode, insights);
+      // Cache the insights for future requests (fire-and-forget for better UX)
+      insightsCacheService.set(courseCode, insights).catch((err) => {
+        logger.error('Failed to cache insights', err, { courseCode });
+      });
 
       const totalTime = Date.now() - totalStart;
       logger.info(`=== Analysis complete: ${totalTime}ms total ===\n`);
@@ -125,7 +127,7 @@ export class CourseInsightsService {
         logger.info(`    ${prof.name} - ${profTime}ms (${status})`);
         prof.rateMyProfData = {
           id: professorData.id,
-          legacyId: professorData.rmpId || undefined,
+          legacyId: professorData.rmpId ? parseInt(professorData.rmpId, 10) : undefined,
           name: professorData.fullName,
           school: professorData.school,
           department: professorData.department || 'Unknown',

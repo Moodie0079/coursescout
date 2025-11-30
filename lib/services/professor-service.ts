@@ -12,6 +12,7 @@ import {
   RMP_GRAPHQL_ENDPOINT,
   RMP_SCHOOL_ID,
   RMP_SEARCH_RESULT_LIMIT,
+  RMP_FETCH_TIMEOUT_MS,
 } from '../constants';
 
 type RmpTeacherNode = {
@@ -174,6 +175,7 @@ class ProfessorService {
             },
           },
         }),
+        signal: AbortSignal.timeout(RMP_FETCH_TIMEOUT_MS),
       });
 
       if (!response.ok) {

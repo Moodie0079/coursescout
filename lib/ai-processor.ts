@@ -102,16 +102,7 @@ export class AIProcessor {
     
     try {
       const apiStartTime = Date.now();
-      const response = await getOpenAI().chat.completions.create({
-        model: AI_MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT(courseCode) },
-          { role: "user", content: prompt }
-        ],
-        temperature: AI_TEMPERATURE,
-        max_tokens: AI_MAX_TOKENS,
-        response_format: { type: 'json_object' }
-      });
+      const response = await this.callOpenAIWithRetry(courseCode, prompt);
       
       const apiTime = Date.now() - apiStartTime;
       
@@ -128,25 +119,100 @@ export class AIProcessor {
           courseCode,
           ...tokenUsage,
           model: AI_MODEL,
-          apiTimeMs: apiTime
+          apiTimeMs: apiTime,
+          generationSpeed: Math.round(tokenUsage.completionTokens / (apiTime / 1000))
         });
-        console.log(`\nOpenAI API Performance for ${courseCode}:`);
-        console.log(`   API Call Time: ${apiTime}ms (${(apiTime / 1000).toFixed(2)}s)`);
-        console.log(`   Input (prompt): ${tokenUsage.promptTokens} tokens`);
-        console.log(`   Output (completion): ${tokenUsage.completionTokens} tokens`);
-        console.log(`   Total: ${tokenUsage.totalTokens} tokens`);
-        console.log(`   Generation Speed: ${(tokenUsage.completionTokens / (apiTime / 1000)).toFixed(0)} tokens/sec`);
-        console.log(`   Model: ${AI_MODEL}\n`);
+      }
+      
+      // Parse and validate response
+      const messageContent = response.choices[0]?.message?.content;
+      if (!messageContent) {
+        logger.warn('OpenAI returned empty response', { courseCode });
+        return { analysis: this.getDefaultAnalysis(courseCode) };
+      }
+
+      let analysis: AIAnalysisResult;
+      try {
+        analysis = JSON.parse(messageContent);
+        
+        // Basic validation - ensure critical fields exist
+        if (!analysis.summary || typeof analysis.difficulty !== 'object' || typeof analysis.workload !== 'object') {
+          logger.warn('OpenAI returned incomplete data structure', { courseCode });
+          return { analysis: this.getDefaultAnalysis(courseCode) };
+        }
+      } catch (parseError) {
+        logger.error('Failed to parse OpenAI JSON response', parseError, { courseCode });
+        return { analysis: this.getDefaultAnalysis(courseCode) };
       }
       
       return {
-        analysis: JSON.parse(response.choices[0].message.content || '{}'),
+        analysis,
         tokenUsage
       };
     } catch (error) {
-      logger.error('OpenAI API failed', error, { courseCode });
+      logger.error('OpenAI API failed after retries', error, { courseCode });
       throw new AIProcessingError('OpenAI API request failed', error);
     }
+  }
+
+  /**
+   * Call OpenAI with exponential backoff retry logic
+   * Handles rate limits (429) and transient errors (500, 503)
+   */
+  private async callOpenAIWithRetry(
+    courseCode: string,
+    prompt: string,
+    maxRetries = 3
+  ): Promise<any> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await getOpenAI().chat.completions.create({
+          model: AI_MODEL,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT(courseCode) },
+            { role: "user", content: prompt }
+          ],
+          temperature: AI_TEMPERATURE,
+          max_tokens: AI_MAX_TOKENS,
+          response_format: { type: 'json_object' }
+        });
+        
+        return response; // Success!
+        
+      } catch (error: any) {
+        lastError = error;
+        
+        // Check if error is retryable
+        const isRateLimited = error?.status === 429;
+        const isServerError = error?.status >= 500 && error?.status < 600;
+        const isRetryable = isRateLimited || isServerError;
+        
+        // If not retryable or last attempt, throw immediately
+        if (!isRetryable || attempt === maxRetries - 1) {
+          throw error;
+        }
+        
+        // Calculate exponential backoff delay: 1s, 2s, 4s
+        const baseDelay = 1000;
+        const delay = baseDelay * Math.pow(2, attempt);
+        
+        logger.warn('OpenAI request failed, retrying...', {
+          courseCode,
+          attempt: attempt + 1,
+          maxRetries,
+          status: error?.status,
+          delayMs: delay
+        });
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    // Should never reach here, but TypeScript needs it
+    throw lastError;
   }
 
   private buildInsights(analysis: AIAnalysisResult, threads: RedditThread[], courseCode: string, metadata?: { tokenUsage?: { promptTokens: number; completionTokens: number; totalTokens: number }; processingTimeMs?: number }): Insights {

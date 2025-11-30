@@ -46,5 +46,22 @@ export const RMP_GRAPHQL_ENDPOINT = 'https://www.ratemyprofessors.com/graphql';
 export const RMP_SCHOOL_ID = 'U2Nob29sLTE1Mg=='; // Carleton University
 export const RMP_SEARCH_RESULT_LIMIT = 10;
 
+// HTTP Status Codes
+export const HTTP_STATUS = {
+  OK: 200,
+  BAD_REQUEST: 400,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+  TOO_MANY_REQUESTS: 429,
+} as const;
+
+// Input Validation
+export const MAX_COURSE_CODE_LENGTH = 100;
+
+// Network Timeouts (milliseconds)
+// Frontend: Only timeout to catch true network failures (not legitimate slow AI processing)
+export const FETCH_TIMEOUT_MS = 120000; // 2 minutes - only catches true hangs, not slow OpenAI
+export const RMP_FETCH_TIMEOUT_MS = 10000; // 10 seconds for RateMyProfessors API
+
 
 

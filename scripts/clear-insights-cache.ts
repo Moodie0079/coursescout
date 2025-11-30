@@ -4,11 +4,11 @@ config();
 import { prisma } from '../lib/prisma';
 
 async function clearCache() {
-  console.log('Clearing insights cache...');
+  console.log('Clearing course cache...');
   
-  const result = await prisma.courseInsightsCache.deleteMany();
+  const result = await prisma.courseCache.deleteMany();
   
-  console.log(`Cleared ${result.count} cached insights`);
+  console.log(`Cleared ${result.count} cached courses`);
   
   await prisma.$disconnect();
 }

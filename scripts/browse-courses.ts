@@ -17,7 +17,7 @@ async function browseCourses() {
 
     if (courses.length === 0) {
       console.log('❌ No courses found in database');
-      console.log('💡 Run the crawler first: npx tsx scripts/crawl_reddit_rate_limited.ts "COMP 1005"');
+      console.log('💡 Run the crawler first: npm run crawl:single');
       return;
     }
 
