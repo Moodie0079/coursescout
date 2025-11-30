@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, Info, ThumbsUp, ThumbsDown, Brain, Clock, BarChart3, Quote as QuoteIcon, AlertTriangle } from 'lucide-react';
 import { SearchResult } from '../../lib/types';
-import { LOADING_PHASE_TIMES } from '../../lib/constants';
 import { trackExternalLink } from '../../lib/analytics';
 
 interface InsightsDisplayProps {
@@ -593,10 +592,10 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
               <p>
                 For official course information, prerequisites, and enrollment details, please consult the 
                 <a 
-                  href="https://calendar.carleton.ca/undergrad/" 
+                  href="https://calendar.carleton.ca/undergrad/courses/" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  onClick={() => trackExternalLink('https://calendar.carleton.ca/undergrad/', 'official_catalog_footer')}
+                  onClick={() => trackExternalLink('https://calendar.carleton.ca/undergrad/courses/', 'official_catalog_footer')}
                   className="text-blue-400 hover:text-blue-300 transition-colors ml-1 inline-flex items-center py-1"
                 >
                   Carleton University course catalog
@@ -611,105 +610,18 @@ export default function InsightsDisplay({ result }: InsightsDisplayProps) {
 }
 
 function LoadingState() {
-  const [loadingTime, setLoadingTime] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState('searching');
-
-  useEffect(() => {
-    const startTime = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      setLoadingTime(elapsed);
-
-      // Update phase based on elapsed time
-      if (elapsed < LOADING_PHASE_TIMES.SEARCHING) {
-        setCurrentPhase('searching');
-      } else if (elapsed < LOADING_PHASE_TIMES.PROCESSING) {
-        setCurrentPhase('processing');  
-      } else {
-        setCurrentPhase('finalizing');
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getPhaseMessage = () => {
-    switch (currentPhase) {
-      case 'searching':
-        return 'Searching local database for course discussions and student feedback...';
-      case 'processing':
-        return 'Analyzing discussion data with AI and cross-referencing with RateMyProfessors...';
-      case 'finalizing':
-        return 'Finalizing insights and generating comprehensive analysis...';
-      default:
-        return 'Analyzing course data...';
-    }
-  };
-
-  const getEstimatedTime = () => {
-    const baseEstimate = 45; // Base estimate for normal completion (45 seconds)
-    
-    if (currentPhase === 'searching') {
-      // Normal search should take 15-30 seconds
-      const remaining = Math.max(5, 25 - loadingTime);
-      return `~${remaining}s remaining`;
-    }
-    
-    if (currentPhase === 'processing') {
-      // Processing should take 15-30 more seconds after searching
-      const remaining = Math.max(10, baseEstimate - loadingTime);
-      return `~${remaining}s remaining`;
-    }
-    
-    if (currentPhase === 'finalizing') {
-      const remaining = Math.max(5, 30 - loadingTime);
-      return `~${remaining}s remaining`;
-    }
-    
-    return `~${Math.max(10, baseEstimate - loadingTime)}s remaining`;
-  };
-
   return (
     <div className="w-full max-w-4xl mx-auto px-4">
-      <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-6 sm:p-8 md:p-12 relative overflow-hidden">
+      <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-6 sm:p-8 md:p-12 relative overflow-hidden transition-all duration-300">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 pointer-events-none"></div>
         <div className="relative z-10 text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-pulse">
             <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Analyzing Course Data</h2>
-          <p className="text-sm sm:text-base text-slate-300 mb-4 px-2">
-            {getPhaseMessage()}
+          <p className="text-sm sm:text-base text-slate-300 px-2">
+            This will take a few seconds...
           </p>
-          <div className="space-y-2 sm:space-y-3">
-            <div className="bg-slate-700/30 rounded-lg p-3">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs sm:text-sm text-slate-400">Searching Reddit discussions</span>
-                <div className={`w-2 h-2 rounded-full animate-pulse flex-shrink-0 ${
-                  currentPhase === 'searching' ? 'bg-blue-400' : 
-                  loadingTime > 15 ? 'bg-green-400' : 'bg-blue-400'
-                }`}></div>
-              </div>
-            </div>
-            <div className="bg-slate-700/30 rounded-lg p-3">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs sm:text-sm text-slate-400">Processing with AI</span>
-                <div className={`w-2 h-2 rounded-full animate-pulse delay-100 flex-shrink-0 ${
-                  currentPhase === 'processing' ? 'bg-purple-400' :
-                  loadingTime > 45 ? 'bg-green-400' : 'bg-slate-500'
-                }`}></div>
-              </div>
-            </div>
-            <div className="bg-slate-700/30 rounded-lg p-3">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs sm:text-sm text-slate-400">Fetching professor ratings</span>
-                <div className={`w-2 h-2 rounded-full animate-pulse delay-200 flex-shrink-0 ${
-                  currentPhase === 'finalizing' ? 'bg-green-400' : 'bg-slate-500'
-                }`}></div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>

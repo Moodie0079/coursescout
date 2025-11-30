@@ -278,15 +278,13 @@ export class SimpleComprehensiveCrawler {
   private async updateCourseData(searchedCourse: string, allCourseCodes: string[], savedPost: any, postData: any): Promise<void> {
     const postDate = new Date(postData.created_utc * 1000);
     
-    // Update searched course: mark as fully crawled + increment stats
+    // Update searched course: increment stats (hasFullCrawl set after successful completion)
     await prisma.course.upsert({
       where: { courseCode: searchedCourse },
       update: {
         totalPosts: { increment: 1 },
         lastUpdated: new Date(),
-        latestPostDate: postDate,
-        hasFullCrawl: true,
-        lastCrawledAt: new Date()
+        latestPostDate: postDate
       },
       create: {
         courseCode: searchedCourse,
@@ -294,8 +292,7 @@ export class SimpleComprehensiveCrawler {
         totalComments: 0,
         firstPostDate: postDate,
         latestPostDate: postDate,
-        hasFullCrawl: true,
-        lastCrawledAt: new Date()
+        hasFullCrawl: false
       }
     });
 
@@ -595,7 +592,7 @@ export class SimpleComprehensiveCrawler {
         latestPostDate = new Date(postDates[postDates.length - 1].createdUtc * 1000);
       }
       
-      // Upsert course summary
+      // Upsert course summary and mark as fully crawled (only runs on successful completion)
       await prisma.course.upsert({
         where: { courseCode: sanitized },
         update: {
@@ -603,14 +600,18 @@ export class SimpleComprehensiveCrawler {
           totalComments: totalComments,
           firstPostDate: firstPostDate,
           latestPostDate: latestPostDate,
-          lastUpdated: new Date()
+          lastUpdated: new Date(),
+          hasFullCrawl: true,
+          lastCrawledAt: new Date()
         },
         create: {
           courseCode: sanitized,
           totalPosts: totalPosts,
           totalComments: totalComments,
           firstPostDate: firstPostDate,
-          latestPostDate: latestPostDate
+          latestPostDate: latestPostDate,
+          hasFullCrawl: true,
+          lastCrawledAt: new Date()
         }
       });
       

@@ -7,7 +7,7 @@ import { prisma } from '../../../lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { course, trackSearch = true } = body;
+    const { course } = body;
 
     // Validate course code is provided and within length limits
     if (!course?.trim()) {
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result, { status });
     }
 
-    // Track search statistics ONLY for successful searches with insights (prevent spam and invalid courses)
-    if (trackSearch && result.insights) {
+    // Track search statistics ONLY for successful searches with insights (prevents counting invalid courses)
+    if (result.insights) {
       // Track per-course search count
       prisma.searchStats.upsert({
         where: { courseCode },

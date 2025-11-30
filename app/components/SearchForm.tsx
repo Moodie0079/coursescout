@@ -66,9 +66,9 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     <div className="w-full max-w-4xl mx-auto relative">
       {/* Search Form */}
       <form onSubmit={handleSubmit} className="mb-8">
-        <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-4 sm:p-6 md:p-8 relative">
+        <div className="bg-slate-800/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-4 sm:p-6 md:p-8 relative overflow-hidden">
           {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 pointer-events-none rounded-3xl"></div>
           
           <div className="relative z-10">
             {/* School Selector */}
@@ -149,9 +149,6 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
                 <span>
                   {loading ? 'Analyzing...' : 'Get insights'}
                 </span>
-                {loading && (
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent flex-shrink-0"></div>
-                )}
               </button>
             </div>
           </div>
