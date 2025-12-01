@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import SearchForm from './components/SearchForm';
 import InsightsDisplay from './components/InsightsDisplay';
 import { SearchResult } from '../lib/types';
@@ -164,13 +165,19 @@ export default function Home() {
               <p className="text-slate-300 text-sm mb-4 px-2">
                 Opinions are from public posts and individual experiences may vary. Always verify with the official catalog and your advisor.
               </p>
-              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-6 text-xs text-slate-500">
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-6 text-xs text-slate-500 mb-4">
                 <span>Made for Carleton University students</span>
                 <span className="hidden sm:inline">•</span>
                 <span>Data sourced from public discussions</span>
                 <span className="hidden sm:inline">•</span>
                 <span>Updated regularly</span>
               </div>
+              <Link 
+                href="/feedback"
+                className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors duration-300 font-medium"
+              >
+                Share Feedback
+              </Link>
             </div>
           </footer>
         </div>
