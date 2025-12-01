@@ -81,6 +81,14 @@ OPENAI_API_KEY="sk-proj-..."
 
 # Optional
 NEXT_PUBLIC_GA_ID="G-XXXXXXXXXX"  # Google Analytics
+
+# Feedback Form (Optional)
+FEEDBACK_EMAIL="your-email@gmail.com"  # Where to receive feedback
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"  # Generate at https://myaccount.google.com/apppasswords
 ```
 
 ### Database Setup
@@ -184,6 +192,17 @@ If you want usage tracking:
 4. Restart the server
 
 The app tracks page views, course searches, and errors. Data appears in your Google Analytics dashboard.
+
+## Feedback Form
+
+The app includes a user feedback form at `/feedback`. To enable email notifications:
+
+1. Enable 2-Factor Authentication on your Gmail account
+2. Generate an App Password at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+3. Add the email configuration to your `.env` file (see Environment Variables section)
+4. Restart the server
+
+Users can then submit feedback which will be emailed directly to you.
 
 ## API
 
