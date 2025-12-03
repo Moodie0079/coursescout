@@ -561,7 +561,7 @@ export class SimpleComprehensiveCrawler {
       // Count all comments for posts that mention this course
       const totalComments = await prisma.comment.count({
         where: {
-          Post: {
+          post: {
             courseCodes: {
               has: sanitized
             }
