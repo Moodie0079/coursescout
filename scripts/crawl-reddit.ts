@@ -259,7 +259,7 @@ export class SimpleComprehensiveCrawler {
   }
   
   private extractCourseCodes(text: string): string[] {
-    const coursePattern = /\b([A-Z]{4})\s*(\d{4})\b/g;
+    const coursePattern = /\b([A-Z]{2,5})\s*(\d{4})\b/g;
     const matches = [];
     let match;
     

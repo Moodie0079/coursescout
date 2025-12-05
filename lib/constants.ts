@@ -4,7 +4,7 @@
  */
 
 // Course code validation
-export const COURSE_CODE_PATTERN = /^[A-Z]{4}\s[0-9]{4}$/;
+export const COURSE_CODE_PATTERN = /^[A-Z]{2,5}\s[0-9]{4}$/;
 
 // Database query limits
 export const MAX_THREADS = 1000;

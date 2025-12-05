@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // Validate course code format
     if (!COURSE_CODE_PATTERN.test(courseCode)) {
       return NextResponse.json(
-        { error: 'Invalid course code format. Please use format like COMP 1005' },
+        { error: 'Invalid course code format. Please use format like COMP 1005 (2-5 letters followed by 4 numbers)' },
         { status: HTTP_STATUS.BAD_REQUEST }
       );
     }

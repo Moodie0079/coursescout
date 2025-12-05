@@ -16,7 +16,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isValidCourseCode = (code: string): boolean => {
-    // Carleton course codes: 4 letters followed by 4 numbers (e.g., COMP 1005)
+    // Carleton course codes: 2-5 letters followed by 4 numbers (e.g., COMP 1005, BIT 1000)
     return COURSE_CODE_PATTERN.test(code.trim());
   };
 
@@ -32,7 +32,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
     const trimmedCourse = course.trim();
     
     if (!isValidCourseCode(trimmedCourse)) {
-      setValidationError('Please enter a valid course code (4 letters followed by 4 numbers, e.g., COMP 1005)');
+      setValidationError('Please enter a valid course code (2-5 letters followed by 4 numbers, e.g. COMP 1005)');
       return;
     }
     
