@@ -1,6 +1,6 @@
 # CourseScout
 
-A web application that helps students make informed course selection decisions by analyzing real Reddit discussions from university communities. Built with Next.js, PostgreSQL, and OpenAI.
+A web application that helps students make informed course selection decisions by analyzing real Reddit discussions from university communities. Built with Next.js, React, Typscript and PostgreSQL.
 
 ## What It Does
 
@@ -9,8 +9,8 @@ CourseScout crawls and analyzes student discussions from Reddit to provide compr
 ## Technology Stack
 
 **Frontend**
-- Next.js 15 with React 19
-- TypeScript for type safety
+- Next.js with React
+- TypeScript
 - Tailwind CSS for styling
 
 **Backend**
@@ -20,7 +20,7 @@ CourseScout crawls and analyzes student discussions from Reddit to provide compr
 - PostgreSQL with GIN indexing
 
 **Analytics**
-- Google Analytics 4 for usage tracking
+- Google Analytics for analytics
 
 ## How It Works
 
@@ -31,7 +31,7 @@ The app uses a pre-crawled database for instant searches:
 1. **Crawling**: Scripts fetch posts and comments from university subreddits (like r/CarletonU)
 2. **Storage**: All data is stored in PostgreSQL with course codes extracted and indexed
 3. **Processing**: When you search, the app retrieves relevant discussions from the database
-4. **Analysis**: OpenAI processes the discussions to extract insights (difficulty, workload, pros/cons)
+4. **Analysis**: OpenAI processes the discussions to extract insights (difficulty, workload, pros/cons etc)
 5. **Caching**: Results are cached in the database for instant future retrievals
 
 ### Database Structure
@@ -129,13 +129,13 @@ npx prisma generate
 Before the app can work, you need to crawl Reddit data:
 
 ```bash
-# Crawl a single course (interactive)
+# Crawl a single course 
 npm run crawl:single
 
-# Crawl all courses from real-carleton-courses.json
+# Crawl all courses from real-carleton-courses.json (this has all Carleton Courses)
 npm run crawl:bulk
 
-# Test with 10 courses
+# Test with 10 courses (for testing)
 npm run crawl:test
 ```
 
@@ -256,16 +256,13 @@ Status codes:
 
 **Typical response times:**
 - Cached course: <100ms
-- New course: 20-45 seconds (depends on discussion volume)
+- New course: 20-30 seconds (depends on discussion volume)
 - Database queries: <500ms
 
 **Optimizations used:**
 - GIN indexes for fast array searches
-- Database-backed persistent caching
-- Fire-and-forget cache writes
+- Database caching
 - Exponential backoff for API failures
-- 120-second timeout protection
-- Prisma connection pooling
 
 ## Deployment
 
@@ -278,24 +275,12 @@ npm run build
 
 ### Options
 
-**Vercel (easiest for Next.js):**
-```bash
-npm i -g vercel
-vercel
-```
-
-**Linux server with PM2:**
+**Linux server with PM2:** 
 ```bash
 npm run build
 pm2 start npm --name "coursescout" -- start
 pm2 save
 pm2 startup
-```
-
-**Docker:**
-```bash
-docker build -t coursescout .
-docker run -p 3000:3000 --env-file .env coursescout
 ```
 
 Make sure to set all environment variables in production and run database migrations after deployment.
@@ -330,10 +315,6 @@ coursescout/
 The app includes:
 - Input validation with length limits and regex
 - SQL injection prevention (Prisma parameterized queries)
-- Environment variables for secrets
-- TypeScript for type safety
-- Error handling with graceful degradation
-- Request timeouts to prevent hanging
 
 ## License
 
